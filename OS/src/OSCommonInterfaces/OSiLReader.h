@@ -22,7 +22,7 @@
 
 #include "OSInstance.h"
 #include "OSiLWriter.h"
-#include "ErrorClass.h"
+#include "OSErrorClass.h"
 
 #include <string>
 
@@ -57,7 +57,7 @@ public:
    	 * @return the instance as an OSInstance object.
 	 * </p> 
    	 */	
-	OSInstance* readOSiL(std::string *osil) throw(ErrorClass);
+	OSInstance* readOSiL(const std::string& osil) throw(ErrorClass);
 
 private:
 	/** osintance is the OSInstance object returned by 

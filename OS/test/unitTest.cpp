@@ -30,7 +30,7 @@
  * <li> callBackTestRowMajor.osil </li>
  * </ol>
  *
- * COIN-Clp tested on parincLinear.osil
+ * COIN-Clp tested on parincLinearByRow.osil
  * 
  * COIN-Cbc tested on p0033.osil
  * 
@@ -98,6 +98,7 @@
 
 #include <cppad/cppad.hpp> 
 //#include "CoinUtilsConfig.h"
+#include "OSCoinSolver.h"
 #include "OSConfig.h"
 #include "OSmps2osil.h" 
 #include "OSResult.h" 
@@ -106,21 +107,21 @@
 #include "OSrLReader.h"          
 #include "OSrLWriter.h"      
 #include "OSInstance.h"  
-#include "FileUtil.h"  
+#include "OSFileUtil.h"  
 #include "OSConfig.h" 
-#include "CoinSolver.h"
-#include "DefaultSolver.h"  
-#include "WSUtil.h" 
+
+#include "OSDefaultSolver.h"  
+#include "OSWSUtil.h" 
 #include "OSSolverAgent.h"   
 #include "OShL.h"     
-#include "ErrorClass.h"
+#include "OSErrorClass.h"
 #include "OSmps2osil.h"   
-#include "Base64.h"
-#include "CommonUtil.h"
+#include "OSBase64.h"
+#include "OSCommonUtil.h"
     
  
 #ifdef COIN_HAS_KNITRO    
-#include "KnitroSolver.h"
+#include "OSKnitroSolver.h"
 #endif 
 
 #ifdef COIN_HAS_GLPK
@@ -132,10 +133,10 @@
 #include "OSnl2osil.h"
 #endif
 #ifdef COIN_HAS_LINDO    
-#include "LindoSolver.h"
+#include "OSLindoSolver.h"
 #endif  
 #ifdef COIN_HAS_IPOPT    
-#include "IpoptSolver.h"
+#include "OSIpoptSolver.h"
 #endif 
  
 
@@ -187,9 +188,33 @@ int main(int argC, char* argV[])
 	nlFileName =  dataDir  + "amplFiles" + dirsep + "parinc.nl";
 	mpsFileName =  dataDir + "mpsFiles" + dirsep + "parinc.mps";
 	fileUtil = new FileUtil();
-	//
+	// 
 	unitTestResult << "HERE ARE THE UNIT TEST RESULTS:" << std::endl << std::endl;
 	
+	//first make sure we can read files
+	try{
+		osilFileName =  dataDir  + "osilFiles" + dirsep +  "parincLinearByRow.osil";
+		std::cout << "Try to read a sample file" << std::endl;
+		std::cout << "The file is: " ;
+		std::cout <<  osilFileName << std::endl;
+		osil = fileUtil->getFileAsString( osilFileName.c_str() );
+		std::cout << "Done reading the test file" << std::endl;
+		OSiLReader *osilreader = NULL;
+		osilreader = new OSiLReader(); 
+		OSInstance *osinstance = osilreader->readOSiL( osil);
+		unitTestResult << "Reading files successfully" << std::endl;
+		OSiLWriter osilwriter;
+		osilwriter.m_bWhiteSpace = true;
+		std::cout << osilwriter.writeOSiL( osinstance) << std::endl;
+	}
+	catch(const ErrorClass& eclass){
+		unitTestResultFailure << "Sorry Unit Test Failed Reading a file: "  + eclass.errormsg<< endl; 
+		//no point continuing we can't even read a file
+		unitTestResultFailure << "Since we can't read files we are terminating"  << endl; 
+		cout << unitTestResultFailure.str() << endl << endl;
+		cout << "Conclusion: FAILURE" << endl;
+		return 1;
+	}	
 	// solve using using the osil file
 	#ifdef COIN_HAS_IPOPT
 	cout << "create a new IPOPT Solver for OSiL string solution" << endl;
@@ -198,11 +223,11 @@ int main(int argC, char* argV[])
 		ok = true;
 		OSiLReader *osilreader = NULL;
 		osilFileName =  dataDir  + "osilFiles" + dirsep +  "avion2.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString(  osilFileName.c_str() );
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol;
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		cout << "call the IPOPT Solver" << endl;	
 		ipoptSolver->solve();
 		cout << "Here is the IPOPT solver solution for avion2" << endl;
@@ -215,11 +240,11 @@ int main(int argC, char* argV[])
 		// solve another problem
 		// a problem with all nonlinear terms no linear terms
 		osilFileName =  dataDir  + "osilFiles" + dirsep + "HS071_NLPMod.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol;
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		ipoptSolver->solve();
 		cout << "Here is the IPOPT solver solution for HS071_NLP" << endl;
 		check = 17.014;
@@ -231,11 +256,11 @@ int main(int argC, char* argV[])
 		// solve another problem
 		// a problem with both quadratic terms and general nonlinear terms
 		osilFileName =  dataDir  + "osilFiles" + dirsep + "rosenbrockmod.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol;
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		cout << "call the IPOPT Solver" << endl;
 		ipoptSolver->solve();
 		check = 6.7279;
@@ -247,11 +272,11 @@ int main(int argC, char* argV[])
 		// solve another problem
 		// a problem that is a pure quadratic
 		osilFileName =  dataDir  + "osilFiles" + dirsep + "parincQuadratic.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol;
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		cout << "call the IPOPT Solver" << endl;
 		ipoptSolver->solve();
 		cout << "Here is the IPOPT solver solution for parincQuadratic" << endl;
@@ -264,11 +289,11 @@ int main(int argC, char* argV[])
 		// solve another problem
 		// try a pure linear program
 		osilFileName =  dataDir  + "osilFiles" + dirsep + "parincLinear.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol; 
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		cout << "call the IPOPT Solver" << endl;
 		ipoptSolver->solve();
 		cout << "Here is the IPOPT solver solution for parincLinear" << endl;
@@ -281,11 +306,11 @@ int main(int argC, char* argV[])
 		// solve another problem
 		// callBackTest.osil
 		osilFileName =  dataDir  + "osilFiles" + dirsep + "callBackTest.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol;
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		//OSiLWriter osilwriter;
 		//cout << osilwriter.writeOSiL( ipoptSolver->osinstance) << endl;
 		//return 0;
@@ -302,11 +327,11 @@ int main(int argC, char* argV[])
 		// solve another problem
 		// callBackTest.osil
 		osilFileName =  dataDir  + "osilFiles" + dirsep + "callBackTestRowMajor.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "IPOPT Solver created for OSiL string solution" << endl;
 		ipoptSolver->osol = osol;
 		osilreader = new OSiLReader(); 
-		ipoptSolver->osinstance = osilreader->readOSiL( &osil);
+		ipoptSolver->osinstance = osilreader->readOSiL( osil);
 		//OSiLWriter osilwriter;
 		//cout << osilwriter.writeOSiL( ipoptSolver->osinstance) << endl;
 		//return 0;
@@ -332,8 +357,23 @@ int main(int argC, char* argV[])
 	#endif
 	try{
 		ok = true; 
-		osilFileName = dataDir  + "osilFiles" + dirsep + "parincLinear.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		std::cout << "create a new COIN Clp for OSiL string solution" << std::endl;
+		osilFileName = dataDir  + "osilFiles" + dirsep + "parincLinearByRow.osil";
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
+		std::cout << "create a new Solver object" << std::endl;
+		OSiLReader *osilreader = NULL;
+		osilreader = new OSiLReader(); 
+		//std::cout <<  osil  << std::endl;
+		OSInstance *osinstance = osilreader->readOSiL( osil);
+		std::cout << " Done reading the OSiL" << std::endl;
+		// now write it again as a string
+		OSiLWriter *osilwriter;
+		osilwriter = new OSiLWriter();
+		osilwriter->m_bWhiteSpace = true;
+		std::cout << " Write the OSiL" << std::endl;
+		osil = osilwriter->writeOSiL( osinstance) ;
+		//std::cout <<  osil  << std::endl;
+		std::cout << " Done writing the OSiL" << std::endl;
 		solver = new CoinSolver();
 		solver->sSolverName = "clp";
 		solver->osil = osil;
@@ -348,11 +388,18 @@ int main(int argC, char* argV[])
 		if(ok == false) throw ErrorClass(" Fail unit test with clp on parincLinear");
 		delete solver;
 		solver = NULL;
-		unitTestResult << "Solved problem parincLinear.osil with Clp" << std::endl;
+		unitTestResult << "Solved problem parincLinearByRow.osil with Clp" << std::endl;
 		// now solve another problem -- try an integer program
 		// this problem is also stored in base64 binary
+	}
+	catch(const ErrorClass& eclass){
+		unitTestResultFailure << "Sorry Unit Test Failed Testing Cbc Solver:"  + eclass.errormsg<< endl;
+	}
+	try{
+		std::cout << "create a new COIN Cbc for OSiL string solution" << std::endl;
+		ok = true;
 		osilFileName = dataDir  + "osilFiles" + dirsep + "p0033.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new CoinSolver();
 		solver->sSolverName ="cbc";
 		solver->osil = osil;
@@ -370,9 +417,7 @@ int main(int argC, char* argV[])
 		unitTestResult << "Solved problem p0033.osil with Cbc" << std::endl;
 	}
 	catch(const ErrorClass& eclass){
-		cout << "OSrL =  " <<  solver->osrl <<  endl;
-		cout << endl << endl << endl;
-		cout <<"Sorry Unit Test Failed Testing the Ipopt Solver:"  + eclass.errormsg << endl;
+		unitTestResultFailure << "Sorry Unit Test Failed Testing Cbc Solver:"  + eclass.errormsg<< endl;
 	}
 	
 	//
@@ -381,7 +426,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true; 
 		osilFileName = dataDir  + "osilFiles" + dirsep + "rosenbrockmod.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new KnitroSolver();
 		solver->osrl = "";	
 		solver->osil = osil;
@@ -401,7 +446,7 @@ int main(int argC, char* argV[])
 		//
 		// now solve callBackTest.osil
 		osilFileName = dataDir  + "osilFiles" + dirsep + "callBackTest.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new KnitroSolver();
 		solver->osrl = "";		
 		solver->osil = osil;		
@@ -421,7 +466,7 @@ int main(int argC, char* argV[])
 		//
 		// now solve a pure quadratic
 		osilFileName = dataDir  + "osilFiles" + dirsep + "parincQuadratic.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new KnitroSolver();	
 		solver->osil = osil;
 		solver->osol = osol;
@@ -439,7 +484,7 @@ int main(int argC, char* argV[])
 		//
 		// now solve a HS071_NLP.osil
 		osilFileName = dataDir  + "osilFiles" + dirsep + "HS071_NLP.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new KnitroSolver();	
 		solver->osil = osil;
 		solver->osol = osol;
@@ -470,7 +515,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true; 
 		osilFileName = dataDir  + "osilFiles" + dirsep + "p0033.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new CoinSolver();
 		solver->sSolverName = "symphony";
 		solver->osil = osil;
@@ -501,7 +546,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true; 
 		osilFileName = dataDir  + "osilFiles" + dirsep + "parincLinear.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new CoinSolver();
 		solver->sSolverName = "dylp";
 		solver->osil = osil;
@@ -532,7 +577,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true; 
 		osilFileName = dataDir  + "osilFiles" + dirsep + "volumeTest.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new CoinSolver();
 		solver->sSolverName = "vol";
 		solver->osil = osil;
@@ -563,7 +608,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true; 
 		osilFileName = dataDir  + "osilFiles" + dirsep + "p0033.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new CoinSolver();
 		solver->sSolverName = "glpk";
 		solver->osil = osil;
@@ -593,7 +638,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true; 
 		osilFileName = dataDir  + "osilFiles" + dirsep + "p0033.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new CoinSolver();
 		solver->sSolverName = "cplex";
 		solver->osil = osil;
@@ -622,7 +667,7 @@ int main(int argC, char* argV[])
 	try{
 		ok = true;
 		osilFileName = dataDir  + "osilFiles" + dirsep + "lindoapiaddins.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		cout << "create a new LINDO Solver for OSiL string solution" << endl;
 		solver = new LindoSolver();	
 		solver->osil = osil;
@@ -641,7 +686,7 @@ int main(int argC, char* argV[])
 		unitTestResult << "Solved problem lindoapiaddins.osil with Lindo" << std::endl;
 		// now solve the rosenbrock problem from the OSiL paper
 		osilFileName = dataDir  + "osilFiles" + dirsep + "rosenbrockmod.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new LindoSolver();	
 		solver->osil = osil;
 		solver->osol = osol;
@@ -659,7 +704,7 @@ int main(int argC, char* argV[])
 		unitTestResult << "Solved problem rosenbrockmod.osil with Lindo" << std::endl;
 		// now solve a pure quadratic
 		osilFileName = dataDir  + "osilFiles" + dirsep + "parincQuadratic.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new LindoSolver();	
 		solver->osil = osil;
 		solver->osol = osol;
@@ -677,7 +722,7 @@ int main(int argC, char* argV[])
 		// now solve a quadratic binary problem
 		// wayneQuadratic.osil
 		osilFileName = dataDir  + "osilFiles" + dirsep + "wayneQuadratic.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		solver = new LindoSolver();	
 		solver->osil = osil;
 		solver->osol = osol;
@@ -826,7 +871,7 @@ int main(int argC, char* argV[])
 		cout << "FIRST READ THE FILE INTO A STRING" << endl;
 		start = clock();
 		osilFileName = dataDir  + "osilFiles" + dirsep + "parincLinear.osil";
-		osil = fileUtil->getFileAsString( &osilFileName[0]);
+		osil = fileUtil->getFileAsString( osilFileName.c_str());
 		finish = clock();
 		duration = (double) (finish - start) / CLOCKS_PER_SEC;
 		cout << "Reading the file into a string took (seconds): "<< duration << endl;
@@ -834,8 +879,8 @@ int main(int argC, char* argV[])
 		osilreader = new OSiLReader(); 
 		start = clock();
 		cout << "PARSE THE OSIL STRING INTO AN OSINSTNACE OBJECT" << endl;
-		osilreader->readOSiL( &osil);
-		//cout << osilwriter->writeOSiL( osilreader->readOSiL( &osil)) << endl;
+		osilreader->readOSiL( osil);
+		//cout << osilwriter->writeOSiL( osilreader->readOSiL( osil)) << endl;
 		delete osilreader;
 		osilreader = 0;
 		finish = clock();
@@ -867,7 +912,7 @@ int main(int argC, char* argV[])
 		cout << "FIRST READ THE OSrL FILE INTO A STRING" << endl;
 		osrlFileName = dataDir  + "osrlFiles" + dirsep + "parincLinear.osrl"; 
 		start = clock();
-		std::string osrl = fileUtil->getFileAsString( &osrlFileName[0]);
+		std::string osrl = fileUtil->getFileAsString( osrlFileName.c_str() );
 		finish = clock();
 		duration = (double) (finish - start) / CLOCKS_PER_SEC;
 		cout << "Reading the file into a string took (seconds): "<< duration << endl;
@@ -894,17 +939,19 @@ int main(int argC, char* argV[])
 	// now test postfix and prefix routines
 	try{
 		std::string expTreeTest =  dataDir  + "osilFiles" + dirsep + "rosenbrockmod.osil";
-		osil = fileUtil->getFileAsString( &expTreeTest[0]);
+		osil = fileUtil->getFileAsString( expTreeTest.c_str() ) ;
 		OSInstance *osinstance = NULL;
 		osinstance = new OSInstance();
 		OSiLReader *osilreader = NULL;
 		osilreader = new OSiLReader();
 		//create an osinstance
-		osinstance = osilreader->readOSiL( &osil);
+		osinstance = osilreader->readOSiL( osil);
 		OSExpressionTree* expTree = osinstance->getNonlinearExpressionTree( -1);
+		if(expTree == NULL) throw ErrorClass(" Null expression tree when testing prefix and postfix routines");
 		std::vector<OSnLNode*> postfixVec;
 		//postfixVec = expTree->m_treeRoot->getPostfixFromExpressionTree();
 		postfixVec = osinstance->getNonlinearExpressionTreeInPostfix( -1);
+	
 		unsigned int n = postfixVec.size();
 		unsigned int i;
 		std::string *nodeNames1 = new std::string[ n];
@@ -913,14 +960,18 @@ int main(int argC, char* argV[])
 			std::cout << postfixVec[i]->snodeName << std::endl;
 			nodeNames1[i] = postfixVec[i]->snodeName;
 		}
+		
 		// now create back the expression tree 
 		expTree->m_treeRoot = postfixVec[ n - 1]->createExpressionTreeFromPostfix( postfixVec);
+	
 		// now get in prefix
 		std::vector<OSnLNode*> prefixVec;
 		//prefixVec = expTree->m_treeRoot->getPrefixFromExpressionTree();
 		prefixVec = osinstance->getNonlinearExpressionTreeInPrefix( -1);
+		
 		// now create back the expression tree
 		expTree->m_treeRoot = prefixVec[ 0]->createExpressionTreeFromPrefix( prefixVec);
+		
 		// now get postfix vector again and compare with original
 		postfixVec = expTree->m_treeRoot->getPostfixFromExpressionTree();
 		//postfixVec = osinstance->getNonlinearExpressionTreeInPostfix( -1);
@@ -931,10 +982,12 @@ int main(int argC, char* argV[])
 			nodeNames2[i] = postfixVec[i]->snodeName;
 			if( nodeNames1[i] != nodeNames2[ i]) throw ErrorClass(" Problem with creating expression trees");
 		}	
+		
 		//delete osinstance;
 		osinstance = NULL;
 		delete osilreader;
 		osilreader = NULL;
+		
 		unitTestResult << "Successful test of prefix and postfix conversion routines on problem rosenbrockmod.osil" << std::endl;
 		
 	}
@@ -947,14 +1000,14 @@ int main(int argC, char* argV[])
 		ok = true;
 		std::cout << "Test nonlinear operators" << std::endl;
 		std::string operatorTest =  dataDir  + "osilFiles" + dirsep + "testOperators.osil";
-		osil = fileUtil->getFileAsString( &operatorTest[0]);
+		osil = fileUtil->getFileAsString( operatorTest.c_str() );
 		OSInstance *osinstance = NULL;
 		osinstance = new OSInstance();
 		OSiLReader *osilreader = NULL;
 		osilreader = new OSiLReader();
 		OSiLWriter *osilwriter = NULL;
 		osilwriter = new OSiLWriter();
-		osinstance = osilreader->readOSiL( &osil);
+		osinstance = osilreader->readOSiL( osil);
 		OSExpressionTree* expTree = osinstance->getNonlinearExpressionTree( -1);
 		std::vector<OSnLNode*> postfixVec;
 		postfixVec = expTree->m_treeRoot->getPostfixFromExpressionTree();
@@ -1042,13 +1095,13 @@ int main(int argC, char* argV[])
 		Note: in the first constraint 33 is a constant term and 105 
 		is part of the nl node
 		*/
-		osil = fileUtil->getFileAsString( &expTreeTest[0]);
+		osil = fileUtil->getFileAsString( expTreeTest.c_str() );
 		OSInstance *osinstance = NULL;
 		osinstance = new OSInstance();
 		OSiLReader *osilreader = NULL;
 		osilreader = new OSiLReader();
 		//create an osinstance
-		osinstance = osilreader->readOSiL( &osil);
+		osinstance = osilreader->readOSiL( osil);
 		double *x;
 		x = new double[ 4];
 		x[0] = 1;

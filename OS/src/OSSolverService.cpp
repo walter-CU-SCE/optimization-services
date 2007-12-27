@@ -67,51 +67,53 @@
  * </ul>
 */
 
-
+#include "OSCoinSolver.h"
 #include "OSResult.h" 
 #include "OSiLReader.h"        
 #include "OSiLWriter.h" 
 #include "OSrLReader.h"        
 #include "OSrLWriter.h"      
 #include "OSInstance.h"  
-#include "FileUtil.h"  
+#include "OSFileUtil.h"  
 #include "OSConfig.h"  
-#include "CoinSolver.h"
-#include "DefaultSolver.h"  
-#include "WSUtil.h" 
+#include "OSDefaultSolver.h"  
+#include "OSWSUtil.h" 
 #include "OSSolverAgent.h"   
 #include "OShL.h"     
-#include "ErrorClass.h"
+#include "OSErrorClass.h"
 #include "OSmps2osil.h"   
-#include "Base64.h"
-#include "CommonUtil.h"
+#include "OSBase64.h"
+#include "OSCommonUtil.h"
+
+
 
 #ifdef COIN_HAS_KNITRO    
-#include "KnitroSolver.h"
-#endif
+#include "OSKnitroSolver.h"
+#endif 
+
 
 #ifdef COIN_HAS_ASL
 #include "OSnl2osil.h"
 #endif
 
 
+
+
 #ifdef COIN_HAS_LINDO    
-#include "LindoSolver.h"
+#include "OSLindoSolver.h"
 #endif 
  
 #ifdef COIN_HAS_IPOPT    
-#include "IpoptSolver.h"
-#endif 
-
-#ifdef COIN_HAS_KNITRO    
-#include "KnitroSolver.h"
+#include "OSIpoptSolver.h"
 #endif 
 
 
 
 
 
-#include "osOptionsStruc.h"  
+
+
+#include "OSOptionsStruc.h"  
 
 
 using std::cout;
@@ -208,18 +210,18 @@ ASL_alloc(ASL_read_fg);
 		if(osoptions->configFile != ""){
 			configFileName = osoptions->configFile;
 			cout << "configFileName = " << configFileName << endl;
-			std::string osolfileOptions = fileUtil->getFileAsString( &configFileName[ 0]);
+			std::string osolfileOptions = fileUtil->getFileAsString( configFileName.c_str() );
 			ossslex_init( &scanner);
 			std::cout << "Call Text Extra" << std::endl;
 			setyyextra( osoptions, scanner);
 			std::cout << "Done with call Text Extra" << std::endl;
-			osss_scan_string( &osolfileOptions[0], scanner);
+			osss_scan_string( osolfileOptions.c_str() , scanner);
 			ossslex(scanner );		
 		}
 	}
 		catch(const ErrorClass& eclass){
 		cout << eclass.errormsg <<  endl;
-		return 0;
+		return 1;
 	} 
 		cout << "HERE ARE THE OPTION VALUES:" << endl;
 		if(osoptions->configFile != "") cout << "Config file = " << osoptions->configFile << endl;
@@ -235,8 +237,8 @@ ASL_alloc(ASL_read_fg);
 		// get the data from the files
 		fileUtil = new FileUtil();
 		try{	
-			if(osoptions->insListFile != "") osoptions->insList = fileUtil->getFileAsChar( &osoptions->insListFile[0]);
-			if(osoptions->osolFile != "") osoptions->osol = fileUtil->getFileAsChar( &osoptions->osolFile[0]);
+			if(osoptions->insListFile != "") osoptions->insList = fileUtil->getFileAsChar( (osoptions->insListFile).c_str() );
+			if(osoptions->osolFile != "") osoptions->osol = fileUtil->getFileAsChar( (osoptions->osolFile).c_str() );
 			if(osoptions->serviceLocation != ""){
 				 cout << "Service Location = " << osoptions->serviceLocation << endl;
 			}
@@ -248,12 +250,12 @@ ASL_alloc(ASL_read_fg);
 			}
 			if(osoptions->osilFile != ""){
 				//this takes precedence over what is in the OSoL file
-				 osoptions->osil = fileUtil->getFileAsString( &osoptions->osilFile[0]);
+				 osoptions->osil = fileUtil->getFileAsString( (osoptions->osilFile).c_str()   );
 			}
 			else{//get <instanceLocation if we are doing a local solve
 				// make sure we don't have a service URI in the file
 					if( (osoptions->osol != "") &&  (osoptions->serviceLocation == "")  &&  (getServiceURI( osoptions->osol) == "") ) 
-						osoptions->osil = fileUtil->getFileAsString( &getInstanceLocation( osoptions->osol)[ 0] );
+						osoptions->osil = fileUtil->getFileAsString( getInstanceLocation( osoptions->osol).c_str()  );
 			}
 			// see if there is a solver specified
 			if(osoptions->solverName != ""){ 
@@ -261,16 +263,16 @@ ASL_alloc(ASL_read_fg);
 			}
 			else{
 				if(osoptions->osol != ""){
-				osoptions->solverName  =    &getSolverName( &osoptions->osolFile[0] )[0];
+				osoptions->solverName  =    getSolverName( osoptions->osolFile.c_str()  );
 				}
 			}
-			if(osoptions->osplInputFile != "") osoptions->osplInput = fileUtil->getFileAsChar( &osoptions->osplInputFile[0]);
-			if(osoptions->osplOutputFile != "") osoptions->osplOutput = fileUtil->getFileAsChar( &osoptions->osplOutputFile[0]);
+			if(osoptions->osplInputFile != "") osoptions->osplInput = fileUtil->getFileAsChar( (osoptions->osplInputFile).c_str()  );
+			if(osoptions->osplOutputFile != "") osoptions->osplOutput = fileUtil->getFileAsChar( (osoptions->osplOutputFile).c_str() );
 		}
 		catch(const ErrorClass& eclass){
 			//cout << eclass.errormsg <<  endl;
 			cout << "could not open file properly" << endl;
-			return 0;
+			return 1;
 		}	
 		// now call the correct serviceMethod
 		// solve is the default
@@ -368,7 +370,7 @@ void solve(){
 			// solve locally
 			if(osoptions->solverName == "" ){
 				string sSolverName = "cbc";
-				osoptions->solverName = &sSolverName[0];
+				osoptions->solverName = sSolverName;
 			}
 			if( osoptions->solverName.find( "ipopt") != std::string::npos) {
 				// we are requesting the Ipopt solver
@@ -572,7 +574,7 @@ void send(){
 	try{
 		// call a method here to get OSiL if we have an nl or mps file
 		if(osoptions->osil == ""){
-			//we better have an osil file present or mps file
+			//we better have an nl file present or mps file
 			if(osoptions->nlFile != ""){
 				getOSiLFromNl();
 			}
@@ -726,11 +728,12 @@ void getOSiLFromNl(){
 		delete osilwriter;
 		osilwriter = NULL; 	
 		#else
-		throw("trying to convert nl to osil without AMPL ASL configured");
+		throw ErrorClass("trying to convert nl to osil without AMPL ASL configured");
 		#endif
 	}
 	catch(const ErrorClass& eclass){
 		std::cout << eclass.errormsg <<  std::endl;
+		throw ErrorClass( eclass.errormsg) ;
 	}	
 }//getOSiLFromNl
 
@@ -752,6 +755,7 @@ void getOSiLFromMps(){
 	}
 	catch(const ErrorClass& eclass){
 		std::cout << eclass.errormsg <<  std::endl;
+		throw ErrorClass( eclass.errormsg) ;
 	}	
 	
 }//getOSiLFromMps
