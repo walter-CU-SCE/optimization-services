@@ -13,22 +13,23 @@
  * Please see the accompanying LICENSE file in root directory for terms.
  * 
  */ 
-#include "OSConfig.h"
-#include "OSWSUtil.h"
-#ifdef WIN_
-//#define NOMINMAX
-#include <winsock.h>
-#else
-#include <sys/socket.h>
-#include <arpa/inet.h>   
-#include <unistd.h>  
-#include <netdb.h>  
-#endif
+
 //#define DEBUG 
+#include "OSConfig.h"
+#ifdef WIN_
+	#ifndef _SYS_UNISTD_H
+		#define _SYS_UNISTD_H
+	#endif
+   	#include <winsock.h>
+#else
+	#include <sys/socket.h>
+	#include <arpa/inet.h>   
+	#include <unistd.h>  
+	#include <netdb.h>  
+#endif
+
+#include "OSWSUtil.h"
 #include <cstring> 
-  
-
-
 #include <iostream>
 #include <sstream> 
 #include "OSErrorClass.h"

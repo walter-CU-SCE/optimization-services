@@ -42,6 +42,29 @@
 
 
 
+/*! \class InstanceHeader
+ * \brief The in-memory representation of the 
+ * <b><instanceHeader></b> element.
+ */
+class InstanceHeader{
+public:
+
+	/** The InstanceHeader class constructor */
+	InstanceHeader();
+	
+	/** The InstanceHeader class destructor */
+	~InstanceHeader();
+	
+	/** the problem instance description */
+	std::string description;
+	
+	/** the name of the problem instance */
+	std::string name;
+	
+	/** the source of the problem instance */
+	std::string source;		
+};//class InstanceHeader
+
 
 
 /*! \class Variable
@@ -180,28 +203,6 @@ public:
 };//class Constraints
 
 
-/*! \class InstanceHeader
- * \brief The in-memory representation of the 
- * <b><instanceHeader></b> element.
- */
-class InstanceHeader{
-public:
-
-	/** The InstanceHeader class constructor */
-	InstanceHeader();
-	
-	/** The InstanceHeader class destructor */
-	~InstanceHeader();
-	
-	/** the problem instance description */
-	std::string description;
-	
-	/** the name of the problem instance */
-	std::string name;
-	
-	/** the source of the problem instance */
-	std::string source;		
-};//class InstanceHeader
 
 /*! \class Objective
  * \brief The in-memory representation of the 
@@ -434,18 +435,18 @@ class NonlinearExpressions {
     Nl **nl;
 }; // NonlinearExpression
  
-/*! \class Stage
+/*! \class TimeDomainStage
  * \brief The in-memory representation of the 
  * <b><stage></b> element.
  */
-class Stage {
+class TimeDomainStage {
     public:
     
     /** The Stage class constructor */
-	Stage();
+	TimeDomainStage();
 	
 	/** The Stage class destructor */
-	~Stage();
+	~TimeDomainStage();
 	
 	/** name corresponds to the optional attribute that holds
 	 * the name of the stage; the default value is empty
@@ -467,31 +468,31 @@ class Stage {
 	/** variables is a pointer to an array of variables
 	 *  associated with this stage
 	 */
-	int** variables;
+	int *variables;
 
 	/** constraints is a pointer to an array of constraints
 	 *  associated with this stage
 	 */
-	int** constraints;
+	int *constraints;
 
 	/** objectives is a pointer to an array of objectives
 	 *  associated with this stage
 	 */
-	int** objectives;
+	int *objectives;
 }; // Stage
  
-/*! \class Stages
+/*! \class TimeDomainStages
  * \brief The in-memory representation of the 
  * <b><stages></b> element.
  */
-class Stages {
+class TimeDomainStages {
     public:
     
     /** The Stages class constructor */
-	Stages();
+	TimeDomainStages();
 	
 	/** The Stages class destructor */
-	~Stages();
+	~TimeDomainStages();
 	
 	/** numberOfStages is the number of stages
 	 * in the <b><stages></b> element.
@@ -499,21 +500,21 @@ class Stages {
 	int numberOfStages;
 	
 	/** stage is pointer to an array of stage object pointers */	
-    Stage **stage;
+    TimeDomainStage **stage;
 }; // Stages
  
 /*! \class Interval
  * \brief The in-memory representation of the 
  * <b><interval></b> element.
  */
-class Interval {
+class TimeDomainInterval {
     public:
     
     /** The Interval class constructor */
-	Interval();
+	TimeDomainInterval();
 	
 	/** The Interval class destructor */
-	~Interval();
+	~TimeDomainInterval();
 	
 	/** intervalHorizon is the end of the planning period
 	 * in the <b><interval></b> element.
@@ -541,11 +542,11 @@ class TimeDomain {
 
 	/** stages is a pointer to a Stages object 
 	 */
-	Stages *stages;
+	TimeDomainStages *stages;
 
 	/** interval is a pointer to an Interval object 
 	 */
-	Interval *interval;
+	TimeDomainInterval *interval;
 }; // TimeDomain
 
 /*! \class InstanceData
@@ -1182,9 +1183,8 @@ private:
 	/**
 	 * m_iNumberOfTimeStages holds the number of discrete stages
 	 */
-	bool m_iNumberOfTimeStages;
+	int m_iNumberOfTimeStages;
 
-	
 	/**
 	 * process variables. 
 	 * 
@@ -1214,19 +1214,14 @@ private:
 	/**
 	 * process linear constraint coefficients. 
 	 * 
-	 * @return true if the inear constraint coefficients are processed. 
-	 * @throws Exception if the elements in inear constraint coefficients are logically inconsistent. 
+	 * @return true if the linear constraint coefficients are processed. 
+	 * @throws Exception if the elements in linear constraint coefficients are logically inconsistent. 
 	 */
 	bool processLinearConstraintCoefficients();
 	
 	
 public:
 
-	/**
-	 * bUseExpTreeForFunEval is set to true if you wish to use the OS Expression Tree for
-	 * function evaluations instead of AD -- false by default. 
-	 */
-	bool bUseExpTreeForFunEval;
 	
 	/**
 	 * Get instance name. 
@@ -2236,6 +2231,13 @@ bool setLinearConstraintCoefficients(int numberOfValues, bool isColumnMajor,
 	 * @return true if successful 
 	 */		 
 	bool initObjGradients();
+	
+	
+	/**
+	 * bUseExpTreeForFunEval is set to true if you wish to use the OS Expression Tree for
+	 * function evaluations instead of AD -- false by default. 
+	 */
+	bool bUseExpTreeForFunEval;
 	
 																																																			
 }; //class OSInstance

@@ -17,8 +17,8 @@
  * hs71.mod. Execute the following sequence of commands:
  * 
  * model hs71.mod;  <br />
- * option solver amplClient; <br />
- * option amplClient_options "solver ipopt"; <br />
+ * option solver OSAmplClient; <br />
+ * option OSAmplClient_options "solver ipopt"; <br />
  * write gtestfile; <br />
  * solve; <br />
  * display x1; <br />
@@ -52,7 +52,7 @@
 #ifdef COIN_HAS_IPOPT    
 #include "OSIpoptSolver.h"
 #endif  
-
+#include "OSFileUtil.h"
 #include "OSDefaultSolver.h"
 #include "OSSolverAgent.h"
 #include "OShL.h"
@@ -117,17 +117,22 @@ int main(int argc, char **argv)
 	// set solver type default to clp
 	DefaultSolver *solverType  = NULL;	
 	OSrLReader *osrlreader = NULL;
-	osrlreader = new OSrLReader();
 	OSrLWriter *osrlwriter;
 	osrlwriter = new OSrLWriter();
 	OSResult *osresult = NULL;
 	std::string osrl = "";
 	std::string sSolverName = "";
 	// note that default solver is coin and default subSolver is Cbc
-	std::string osol = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <osol xmlns=\"os.optimizationservices.org\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"os.optimizationservices.org http://www.optimizationservices.org/schemas/OSoL.xsd\"><other> </other></osol>";
+	std::string osol = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <osol xmlns=\"os.optimizationservices.org\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"os.optimizationservices.org http://www.optimizationservices.org/schemas/OSoL.xsd\"></osol>";
+	
+	char *num_procOption = NULL;
+	char *num_processors = NULL;
+	char *URL = NULL;
+	char delims[] = " ";
+	
 	// get the solver set by AMPL
-	amplclient_options = getenv("amplClient_options");
-	if(amplclient_options != NULL) cout << "HERE ARE THE AMPL CLIENT OPTIONS " <<   amplclient_options << endl;
+	amplclient_options = getenv("OSAmplClient_options");
+	if( amplclient_options != NULL) cout << "HERE ARE THE AMPLCLIENT OPTIONS " <<   amplclient_options << endl;
 	try{
 		if(amplclient_options == NULL ) throw ErrorClass( "a local solver was not specified in AMPL option");
 		else{
@@ -144,6 +149,7 @@ int main(int argc, char **argv)
 			}
 			else{ 
 				if( strstr(amplclient_options, "clp") != NULL){
+					if( solver_option != NULL) cout << "HERE ARE THE Clp SOLVER OPTIONS " <<   solver_option << endl;
 					sSolverName = "clp";
 					solver_option = getenv("clp_options");
 					if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL) ){
@@ -155,6 +161,7 @@ int main(int argc, char **argv)
 					if( strstr(amplclient_options, "cbc") != NULL){
 						sSolverName = "cbc";
 						solver_option = getenv("cbc_options");
+						if( solver_option != NULL) cout << "HERE ARE THE Cbc SOLVER OPTIONS " <<   solver_option << endl;
 						if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL)){
 							solverType = new CoinSolver();
 							solverType->sSolverName = "cbc";
@@ -162,72 +169,109 @@ int main(int argc, char **argv)
 					}
 					else{
 						if( strstr(amplclient_options, "cplex") != NULL){
-							sSolverName = "cplex";
-							solver_option = getenv("cplex_options");
-							if(  ( solver_option == NULL) ||  (strstr(solver_option, "service") == NULL)){
-								solverType = new CoinSolver();
-								solverType->sSolverName = "cplex";
-							}
+							bool bCplexIsPresent = false;
+							#ifdef COIN_HAS_CPX
+								bCplexIsPresent = true;
+								sSolverName = "cplex";
+								solver_option = getenv("cplex_options");
+								if( solver_option != NULL) cout << "HERE ARE THE Cplex SOLVER OPTIONS " <<   solver_option << endl;
+								if(  ( solver_option == NULL) ||  (strstr(solver_option, "service") == NULL)){
+									solverType = new CoinSolver();
+									solverType->sSolverName = "cplex";
+								}
+							#endif
+								if(bCplexIsPresent == false) throw ErrorClass( "the Cplex solver requested is not present");
 						}
 						else{
 							if( strstr(amplclient_options, "glpk") != NULL){
-								solverType = new CoinSolver();
-								sSolverName = "glpk";
-								solver_option = getenv("glpk_options");
-								if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL)){
+								bool bGlpkIsPresent = false;
+								#ifdef COIN_HAS_GLPK
+									bGlpkIsPresent = true;
 									solverType = new CoinSolver();
-									solverType->sSolverName = "glpk";
-								}
+									sSolverName = "glpk";
+									solver_option = getenv("glpk_options");
+									if( solver_option != NULL) cout << "HERE ARE THE Glpk SOLVER OPTIONS " <<   solver_option << endl;
+									if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL)){
+										solverType = new CoinSolver();
+										solverType->sSolverName = "glpk";
+									}
+								#endif
+								if(bGlpkIsPresent == false) throw ErrorClass( "the Glpk solver requested is not present");
 							}
 							else{
 								if( strstr(amplclient_options, "ipopt") != NULL){
-									// have to act differently since Ipopt uses smart pointers
-									// we are requesting the Ipopt solver
-									sSolverName = "ipopt";
-									solver_option = getenv("ipopt_options");
-									if( amplclient_options != NULL) cout << "HERE ARE THE AMPLCLIENT OPTIONS " <<   amplclient_options << endl;
-									if( solver_option != NULL) cout << "HERE ARE THE IPOPT OPTIONS " <<   solver_option << endl;
 									bool bIpoptIsPresent = false;
-									if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL) ){
-										#ifdef COIN_HAS_IPOPT
+									#ifdef COIN_HAS_IPOPT
 										bIpoptIsPresent = true;
-										//std::cout << "Create an Ipopt solver and optimize"<< std::endl;
-										SmartPtr<IpoptSolver> ipoptSolver  = new IpoptSolver();	
-										ipoptSolver->osol = osol;
-										ipoptSolver->osinstance = osinstance;
-										ipoptSolver->solve();
-										//std::cout << "Done optimizing with Ipopt"<< std::endl;
-										osrl = ipoptSolver->osrl ;
-										//std::cout << "Have Ipopt writ out osrl"<< std::endl;
-				
-										#endif
-										if(bIpoptIsPresent == false) throw ErrorClass( "the Ipopt solver requested is not present");
-									}
+										sSolverName = "ipopt";
+										solver_option = getenv("ipopt_options");
+										if( solver_option != NULL) cout << "HERE ARE THE Ipopt SOLVER OPTIONS " <<   solver_option << endl;
+										if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL) ){
+											solverType = new IpoptSolver();
+											solverType->sSolverName = "ipopt";
+										}
+									#endif
+									if(bIpoptIsPresent == false) throw ErrorClass( "the Ipopt solver requested is not present");
 								}
 								else{
 									if( strstr(amplclient_options, "symphony") != NULL){
-										sSolverName = "symphony";
-										solver_option = getenv("symphony_options");
-										if(  ( solver_option == NULL) ||  (strstr(solver_option, "service") == NULL)){
-											solverType = new CoinSolver();
-											solverType->sSolverName = "symphony";
-										}
+										bool bSymIsPresent = false;
+										#ifdef COIN_HAS_SYMPHONY
+											bSymIsPresent = true; 
+											sSolverName = "symphony";
+											solver_option = getenv("symphony_options");
+											if( solver_option != NULL) cout << "HERE ARE THE SYMPHONY SOLVER OPTIONS " <<   solver_option << endl;
+											// get the number of parallel parallel processors and insert into the osol
+											// tokenize the symphony_options string
+											// just test for now, make a subroutine later
+
+											//
+											if(solver_option != NULL){
+												num_procOption = strstr(solver_option, "num_proc");
+												if (num_procOption != NULL){
+													// kipp -- probably should make this a subroutine in
+													// case other solvers have options???
+													// get the number of processors
+													//move past the num_proc option name token
+													num_procOption += 8;
+													num_processors = strtok( num_procOption, delims );
+													//
+													string::size_type iStringpos;
+													iStringpos = osol.find("</osol");
+													std::string insertText = "<other name=\"num_proc\">";
+													insertText +=  num_processors;
+													insertText += "</other>";
+													osol.insert(iStringpos, insertText);
+
+												}
+											}
+											if(  ( solver_option == NULL) ||  (strstr(solver_option, "service") == NULL)){
+												solverType = new CoinSolver();
+												solverType->sSolverName = "symphony";
+											}
+										#endif
+										if(bSymIsPresent == false) throw ErrorClass( "the SYMPHONY solver requested is not present");
 									}
 									else{
 										if( strstr(amplclient_options, "dylp") != NULL){
-											sSolverName = "dylp";
-											solver_option = getenv("dylp_options");
-											if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL) ){
-												solverType = new CoinSolver();
-												solverType->sSolverName = "dylp";
-											}
+											bool bDyLPIsPresent = false;
+											#ifdef COIN_HAS_DYLP
+												bDyLPIsPresent = true;
+												sSolverName = "dylp";
+												solver_option = getenv("dylp_options");
+												if( solver_option != NULL) cout << "HERE ARE THE DyLP SOLVER OPTIONS " <<   solver_option << endl;
+												if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL) ){
+													solverType = new CoinSolver();
+													solverType->sSolverName = "dylp";
+												}
+											#endif
+											if(bDyLPIsPresent == false) throw ErrorClass( "the DyLP solver requested is not present");
 										}
 										else{
-											std::cout << "HERE I AM J" << std::endl;
 											throw ErrorClass( "a supported solver has not been selected");
 										}
 									}	
-								}
+								} 
 							}
 						}
 					}
@@ -235,77 +279,118 @@ int main(int argc, char **argv)
 			}
 		}
 		// do a local solve
-		if( (strstr(amplclient_options, "ipopt") == NULL) && (solver_option == NULL)){
+		if( ( solver_option == NULL) || (strstr(solver_option, "service") == NULL)  ){
 			solverType->osol = osol;
+			//std::cout << osol << std::endl;
 			solverType->osinstance = osinstance;
+			solverType->buildSolverInstance();
 			solverType->solve();
 			osrl = solverType->osrl ;
-			std::cout << osrl << std::endl;
+			//std::cout << osrl << std::endl;
 		}
 	}
 	catch(const ErrorClass& eclass){
-		osresult = new OSResult();
-		osrl = eclass.errormsg;
-		if(solverType == NULL){	
-			osresult->setGeneralMessage( eclass.errormsg);
-			osresult->setGeneralStatusType( "error");
-			osrl = osrlwriter->writeOSrL( osresult);	
-		}
-		else {
-			osrl = eclass.errormsg;
-		}
-		cout << osrl << endl << endl <<endl;
-		write_sol(const_cast<char*>(osrl.c_str()), 
-			osresult->getOptimalPrimalVariableValues( -1), 
-			osresult->getOptimalDualVariableValues( -1), NULL);
+		osresult = new OSResult();	
+		osresult->setGeneralMessage( eclass.errormsg);
+		osresult->setGeneralStatusType( "error");
+		osrl = osrlwriter->writeOSrL( osresult);
+		std::cout  << osrl << std::endl;
+		osrl = " ";
+		write_sol(const_cast<char*>(osrl.c_str()), NULL, NULL, NULL);
+		delete osresult;
 		return 0;
 	}
-	// do the following for a remote solve
-	if( (solver_option != NULL) && (strstr(solver_option, "service") != NULL)){
-		OSSolverAgent* osagent = NULL;
-		OSiLWriter *osilwriter = NULL;
-		osilwriter = new OSiLWriter();
-		std::string  osil = osilwriter->writeOSiL( osinstance);
-		////
-		agent_address = strstr(solver_option, "service");
-		agent_address += 7;
-		// get rid of white space;
-		while(*agent_address  == ' ') agent_address++;
-		///
-		osagent = new OSSolverAgent( agent_address);
-		// if a solver option was specified put that in
-		string::size_type iStringpos;
-		iStringpos = osol.find("</osol");
-		//std::cout <<  solverType->sSolverName << std::endl;
-		std::string solverInput = "<other name=\"os_solver\">"
-			+ sSolverName  + "</other>";
-		osol.insert(iStringpos, solverInput);
-		cout << "Place remote synchronous call" << endl;
-		osrl = osagent->solve(osil, osol);
-	}
-	// okay start to test osrl parser 
 	try{
-		cout << osrl << endl << endl <<endl;
-		osresult = osrlreader->readOSrL( osrl);
-		write_sol(const_cast<char*>(osresult->getSolutionMessage( 0).c_str()), 
-			osresult->getOptimalPrimalVariableValues( -1), 
-			osresult->getOptimalDualVariableValues( -1), NULL);
+		// do the following for a remote solve
+		if( (solver_option != NULL) && (strstr(solver_option, "service") != NULL)){
+			OSSolverAgent* osagent = NULL;
+			OSiLWriter *osilwriter = NULL;
+			osilwriter = new OSiLWriter();
+			std::string  osil = osilwriter->writeOSiL( osinstance);
+			////
+			agent_address = strstr(solver_option, "service");
+			agent_address += 7;
+			URL = strtok( agent_address, delims );
+			std::string sURL = URL;
+			///
+			// we should be pointing to the start of the address
+			osagent = new OSSolverAgent( URL);
+			// if a solver option was specified put that in
+			string::size_type iStringpos;
+			iStringpos = osol.find("</osol");
+			//std::cout <<  solverType->sSolverName << std::endl;
+			std::string solverInput = "<other name=\"os_solver\">"
+				+ sSolverName  + "</other>";
+			osol.insert(iStringpos, solverInput);
+			cout << "Place remote synchronous call: " + sURL << endl << endl << endl;
+			cout << osol << endl;
+			osrl = osagent->solve(osil, osol);
+			if (osrl.size() == 0) throw ErrorClass("Nothing was returned from the server, please check service address");
+			delete osilwriter;
+			delete osagent; 
+		} 
+	}
+	catch(const ErrorClass& eclass){
+		osresult = new OSResult();
+		osresult->setGeneralMessage( eclass.errormsg);
+		osresult->setGeneralStatusType( "error");
+		osrl = osrlwriter->writeOSrL( osresult);	
+		write_sol(const_cast<char*>(osrl.c_str()), NULL, NULL, NULL);
 		delete osresult;
+		return 0;
+	}
+	try{ 
+		//need_nl = 0;
+		std::string sResultFileName = "solutionResult.osrl";
+		FileUtil *fileUtil;
+		fileUtil = new FileUtil();
+		fileUtil->writeFileFromString(sResultFileName, osrl);
+		delete fileUtil;
+		//cout << "WRITE THE SOLUTION BACK INTO AMPL" <<endl;
+		string::size_type pos1 = osrl.find( "error");
+		if(pos1 == std::string::npos){
+			std::string sReport = "model was solved";
+			std::cout << sReport << std::endl;
+			osrlreader = new OSrLReader();
+			osresult = osrlreader->readOSrL( osrl);
+			// do the following so output is not written twice
+			// see page 23 of hooking solver to AMPL
+			//need_nl = printf( sReport.c_str());
+
+			//
+			sReport = " ";
+			write_sol(  const_cast<char*>(sReport.c_str()), 
+					osresult->getOptimalPrimalVariableValues( -1), 
+					osresult->getOptimalDualVariableValues( -1) , NULL);
 			
+			delete osrlreader;
+			osrlreader = NULL;
+		}else{
+			// do the following so output is not written twice
+			// see page 23 of hooking solver to AMPL
+			std::cout  << osrl << std::endl;
+			osrl = " ";
+			//
+			write_sol(  const_cast<char*>(osrl.c_str()), NULL, NULL, NULL);
+			need_nl = 0;
+		}
+		//cout << "DONE WRITING THE SOLUTION BACK INTO AMPL" <<endl;
 	}
 	catch(const ErrorClass& eclass){
 		cout << "There was an error parsing the OSrL" << endl << eclass.errormsg << endl << endl;
 	}
-	delete osrlreader;
-	osrlreader = NULL;
-	if( strstr(amplclient_options, "ipopt") == NULL  && ((solver_option != NULL) || (strstr(solver_option, "service") == NULL)) ){
-		
+	if(  solverType != NULL ){
+		//cout << "TRY TO DELETE solverType" <<endl;
 		delete solverType;
+		//cout << "solverType JUST DELETED" <<endl;
 		solverType = NULL;
 	}
 	delete osrlwriter;
+	//cout << "osrlwriter JUST DELETED" <<endl;
 	osrlwriter = NULL;
 	delete nl2osil;
+	//cout << "nl2osil JUST DELETED" <<endl;
 	nl2osil = NULL;
-	return 0;
+	ASL_free(&asl);
+	return 0; 
 } // end main

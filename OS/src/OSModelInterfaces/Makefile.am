@@ -51,7 +51,8 @@ AM_CPPFLAGS =\
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSAgent`  \
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSCommonInterfaces`  \
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSSolverInterfaces`	\
-	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSUtils` 
+	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSUtils`  \
+	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSParsers`
 
 
 
@@ -110,9 +111,11 @@ if COIN_HAS_ASL
 endif
 
 
+
 if COIN_HAS_IPOPT
   AM_CPPFLAGS += \
 	-I`$(CYGPATH_W) $(IPOPTSRCDIR)/src/Interfaces` \
+	-I`$(CYGPATH_W) $(IPOPTSRCDIR)/src/LinAlg` \
 	-I`$(CYGPATH_W) $(IPOPTSRCDIR)/src/Common` \
 	-I`$(CYGPATH_W) $(IPOPTOBJDIR)/inc`
 endif

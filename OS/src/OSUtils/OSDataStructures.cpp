@@ -13,7 +13,9 @@
  * Please see the accompanying LICENSE file in root directory for terms.
  * 
  */ 
+ 
 
+ //#define DEBUG
 
 #include "OSDataStructures.h"
 #include <iostream>
@@ -41,6 +43,9 @@ SparseVector::~SparseVector(){
 	cout << "inside sparseVector destructor" << endl;
 	#endif
 	if(	bDeleteArrays == true){
+#ifdef DEBUG
+cout << "delete[] indexes and arrays" << endl;
+#endif
 		delete[] indexes;
 		delete[] values;
 	}
@@ -186,7 +191,7 @@ SparseHessianMatrix::SparseHessianMatrix():
 
 SparseHessianMatrix::~SparseHessianMatrix(){
 	#ifdef DEBUG
-	cout << "inside SparseJacobianMatrix destructor" << endl;
+	cout << "inside SparseHessianMatrix destructor" << endl;
 	#endif
 	if(bDeleteArrays == true){
 		delete[] hessRowIdx;
@@ -224,6 +229,7 @@ QuadraticTerms::~QuadraticTerms(){
 
 
 IntVector::IntVector():
+	bDeleteArrays(true),
 	el(NULL)
 {  
 	#ifdef DEBUG
@@ -235,11 +241,15 @@ IntVector::~IntVector(){
 	#ifdef DEBUG
 	cout << "Inside the IntVector Destructor" << endl;
 	#endif
-	delete[] el;
-	el = NULL;
+	if(	bDeleteArrays == true){
+		delete[] el;
+		el = NULL;
+	}
+
 } 
 
 DoubleVector::DoubleVector():
+	bDeleteArrays(true),
 	el(NULL)
 {
 	#ifdef DEBUG
@@ -253,7 +263,9 @@ DoubleVector::~DoubleVector(){
 	#ifdef DEBUG
 	cout << "Inside the DoubleVector Destructor" << endl;
 	#endif
-	delete[] el;
-	el = NULL;
+	if(	bDeleteArrays == true){
+		delete[] el;
+		el = NULL;
+	}
 }
 

@@ -12,17 +12,23 @@
  * Please see the accompanying LICENSE file in root directory for terms.
  * 
  */
- #include "OSiLParserData.h"
+#include "OSiLParserData.h"
+#include <iostream>
+using namespace std;
  OSiLParserData::~OSiLParserData(){
  	// clear the vectors of pointers
 	nlNodeVec.clear();
+	//delete nlNodeVec.back();
 	sumVec.clear();
 	maxVec.clear();
 	productVec.clear();
+	minVec.clear();
+	allDiffVec.clear(); 	
  }//~OSiLParserData
  
 
  OSiLParserData::OSiLParserData() :
+ 	osillineno(0),
  	qtermcount(0),
   	qtermidxOneattON(false),
 	qtermidxTwoattON(false),
@@ -36,16 +42,27 @@
  	numberidattON(false),
  	variableidxattON(false),
  	variablecoefattON(false),
-	stagename(""),
+	timeDomainStages(false),
+	timeDomainInterval(false),
 	stagecount(0),
-	stagemult(0),
-	intervalhorizon(0.0),
-	intervalstart(0.0),
 	stagenameON(false),
-	stagemultON(false),
+	stagename(""),
+	stageVariablesON(false),
+	stageConstraintsON(false),
+	stageObjectivesON(false),
+	stageVariablesOrdered(false),
+	stageConstraintsOrdered(false),
+	stageObjectivesOrdered(false),
+	stageVariableStartIdx(0),
+	stageConstraintStartIdx(0),
+	stageObjectiveStartIdx(0),
+	stagevarcount(0),
+	stageconcount(0),
+	stageobjcount(0),
 	intervalhorizonON(false),
+	intervalhorizon(0.0),
 	intervalstartON(false),
-	osillineno(0)
+	intervalstart(0.0)
  {
 
  }//OSiLParserData

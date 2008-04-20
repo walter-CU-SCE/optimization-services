@@ -29,8 +29,8 @@ Alternatively, if you want to name the file and not use the AMPL randomly
 generate file name, do the following:
 
    model hs71.mod;
-   option solver amplclient;
-   option amplclient_options "solver lindo";
+   option solver OSAmplClient;
+   option OSAmplClient_options "solver lindo";
    option lindo_options "<<any options for the lindo solver>>";
    write gtestfile;
    solve;
@@ -59,6 +59,7 @@ you should get x1 = 540, x2 = 252
 
 #define R_OPS ((ASL_fg*)asl)->I.r_ops_
 #define OBJ_DE ((ASL_fg*)asl)->I.obj_de_
+#define VAR_E  ((ASL_fg *) asl) -> I.var_e_
 #define CON_DE ((ASL_fg*)asl)->I.con_de_
 
 efunc *r_ops_int[N_OPS];
@@ -76,8 +77,8 @@ using std::endl;
 
 OSnl2osil::OSnl2osil(std::string nlfilename){	
 	//Initialize the AMPL library
-	asl = ASL_alloc(ASL_read_fg);
-    	stub = &nlfilename[ 0];
+	asl = ASL_alloc( ASL_read_fg);
+    stub = &nlfilename[ 0];
 	//cout << "READING FILE " << stub << endl;
 	//Initialize the nl file reading
 	nl = jac0dim(stub, (fint)strlen(stub));
@@ -96,10 +97,7 @@ OSnl2osil::OSnl2osil(std::string nlfilename){
 	#ifdef AMPLDEBUG 
 		cout << "Start f_read()" << endl;
 	#endif
-
-	//fg_read(nl, 0);
 	X0 = (real *)Malloc( n_var*sizeof(real));
-	cout <<  "N_OPS =  " <<  N_OPS << endl;
 	if(N_OPS > 0){
 		for(int i = 0; i < N_OPS; i++){
 			r_ops_int[i] = (efunc*)(unsigned long)i;
@@ -113,8 +111,15 @@ OSnl2osil::OSnl2osil(std::string nlfilename){
 }
 
 OSnl2osil::~OSnl2osil(){
+	osinstance->instanceData->linearConstraintCoefficients->start->bDeleteArrays = false;
+	osinstance->instanceData->linearConstraintCoefficients->rowIdx->bDeleteArrays = false;
+	osinstance->instanceData->linearConstraintCoefficients->value->bDeleteArrays = false;
 	delete osinstance;
 	osinstance = NULL;
+	free( X0);
+	free( A_vals);
+	ASL_free(&asl);
+
 }
 
 OSnLNode* OSnl2osil::walkTree (expr *e){
@@ -125,13 +130,17 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 	expr **ep;
 	int opnum;
 	int i;
+	//std::cout << "Variable Index " << varIdx << std::endl;
+	int j = ((expr_v *)e - VAR_E) - osinstance->getVariableNumber() ;
+	//std::cout << "GET OPERATOR NUMBER" << std::endl;
 	op = e->op;
 	opnum = Intcast op;
+	//std::cout << "OPERATOR NUMBER = " << opnum << std::endl;
 	//Printf ("op %d  optype %d  ", opnum, optype[opnum]);
 	try{
 		switch( opnum) {
 			case OPPLUS:
-				cout << "FOUND  PLUS NODE"  << endl;
+				//cout << "FOUND  PLUS NODE"  << endl;
 				nlNodePoint = new OSnLNodePlus();
 				nlNodePoint->m_mChildren[0] = walkTree (e->L.e);
 				nlNodePoint->m_mChildren[1] = walkTree (e->R.e);
@@ -139,7 +148,7 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				
 			case OPSUMLIST:
 				i = 0;
-				cout << "INSIDE SUM OPERATOR" << endl;
+				//cout << "INSIDE SUM OPERATOR" << endl;
 				nlNodePoint = new OSnLNodeSum();
 				nlNodePoint->inumberOfChildren = e->R.ep - e->L.ep;
 				nlNodePoint->m_mChildren = new OSnLNode*[ e->R.ep - e->L.ep];
@@ -149,7 +158,7 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				
 			case MAXLIST:
 				i = 0;
-				cout << "INSIDE MAX OPERATOR" << endl;
+				//cout << "INSIDE MAX OPERATOR" << endl;
 				nlNodePoint = new OSnLNodeMax();
 				nlNodePoint->inumberOfChildren = e->R.ep - e->L.ep;
 				nlNodePoint->m_mChildren = new OSnLNode*[ e->R.ep - e->L.ep];
@@ -169,7 +178,7 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				return nlNodePoint;
 				
 			case OPMULT:
-				cout << "FOUND MULT NODE"  << endl;
+				//cout << "FOUND MULT NODE"  << endl;
 				nlNodePoint = new OSnLNodeTimes();
 				nlNodePoint->m_mChildren[0] = walkTree (e->L.e);
 				nlNodePoint->m_mChildren[1] = walkTree (e->R.e);
@@ -182,7 +191,7 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				return nlNodePoint;
 				
 			case OPPOW:
-				cout << "FOUND OPPOW NODE"  << endl;
+				//cout << "FOUND OPPOW NODE"  << endl;
 				nlNodePoint = new OSnLNodePower();
 				nlNodePoint->m_mChildren[0] = walkTree (e->L.e);
 				nlNodePoint->m_mChildren[1] = walkTree (e->R.e); 
@@ -190,8 +199,8 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				
 				
 			case OP1POW:
-				cout << "FOUND OP1POW NODE"  << endl;
-				cout << "OP1POW EXPONENT =  "  << e->R.en->v<<  endl;
+				//cout << "FOUND OP1POW NODE"  << endl;
+				//cout << "OP1POW EXPONENT =  "  << e->R.en->v<<  endl;
 				nlNodePoint = new OSnLNodePower();
 				nlNodePoint->m_mChildren[0] = walkTree (e->L.e);
 				nlNodeNumberPoint = new OSnLNodeNumber();
@@ -200,7 +209,7 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				return nlNodePoint;
 				
 			case OP2POW:
-				cout << "FOUND OP2POW NODE"  << endl;
+				//cout << "FOUND OP2POW NODE"  << endl;
 				//nlNodePoint = new OSnLNodePower();
 				//nlNodePoint->m_mChildren[0] = walkTree (e->L.e);
 				//nlNodeNumberPoint = new OSnLNodeNumber();
@@ -211,8 +220,8 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				return nlNodePoint;
 				
 			case OPCPOW:
-				cout << "FOUND OPCPOW NODE"  << endl;
-				cout << "OPCPOW EXPONENT =  "  << e->R.en->v<<  endl;
+				//cout << "FOUND OPCPOW NODE"  << endl;
+				//cout << "OPCPOW EXPONENT =  "  << e->R.en->v<<  endl;
 				nlNodePoint = new OSnLNodePower();
 				nlNodeNumberPoint = new OSnLNodeNumber();
 				nlNodeNumberPoint->value = e->L.en->v;
@@ -251,31 +260,110 @@ OSnLNode* OSnl2osil::walkTree (expr *e){
 				return nlNodePoint;
 				
 			case OPNUM:
-				cout << "found a number node" << endl;
+				//cout << "found a number node" << endl;
 				nlNodeNumberPoint = new OSnLNodeNumber;
-				cout << "THE NUMBER" << (double) ((expr_n*)e)->v << endl;
+				//cout << "THE NUMBER" << (double) ((expr_n*)e)->v << endl;
 				nlNodeNumberPoint->value = (double) ((expr_n*)e)->v;
 				return nlNodeNumberPoint;
 				
 			case OPVARVAL:
-				cout << "found a variable node" << endl;
-				if(e->a >= osinstance->getVariableNumber() ) throw ErrorClass("OS cannot handle AMPL user defined variables, please reformulate");
+				//cout << "found a variable node" << endl;
+				// treat the common expression or defined variables
+				if( j >= 0 ){
+					// process common expression
+					/*
+					std::cout << "como = "  << como  << std::endl;
+					std::cout << "comc = "  << comc  << std::endl;
+					std::cout << "comb = "  << comb  << std::endl;
+					std::cout << "como1 = "  << como1  << std::endl;
+					std::cout << "comc1 = "  << comc1  << std::endl;
+					std::cout << "ncom0 = "  << ncom0  << std::endl;
+					std::cout << "jjjjjjjjjjjjjjjjjj = "  << j  << std::endl;
+					*/
+					if(j < ncom0){		
+						struct cexp *common = ((const ASL_fg *) asl) -> I.cexps_ + j ;
+						//walk the tree for the non-linear stuff
+						
+						// now add the linear terms
+						int nlin = common -> nlin;
+						//std::cout << "Number of linear terms in common expression " << nlin << std::endl;
+						 
+						if( nlin > 0) {
+							nlNodePoint = new OSnLNodeSum();
+							nlNodePoint->inumberOfChildren = nlin + 1;
+							nlNodePoint->m_mChildren = new OSnLNode*[ nlin + 1];			
+							// we have linear variables
+							// get the index and coefficient
+							linpart *L = common -> L;
+							for(int kj = 0; kj < nlin; kj++) {
+								
+								// get the coefficient
+								//std::cout << "Linear coefficient  "  << L [kj].fac << std::endl;
+								 
+								// get the index
+								//std::cout  << "Variable index  "  << ((uintptr_t) (L [kj].v.rp) - (uintptr_t) VAR_E) / sizeof (expr_v) << std::endl;
+								// add an OSnLSumNode with the linear terms
+								nlNodePoint->m_mChildren[ kj] = new OSnLNodeVariable;
+								nlNodeVariablePoint = (OSnLNodeVariable*)nlNodePoint->m_mChildren[ kj];
+								nlNodeVariablePoint->coef = L [kj]. fac;
+								nlNodeVariablePoint->idx = ((uintptr_t) (L [kj].v.rp) - (uintptr_t) VAR_E) / sizeof (expr_v);
+							}
+							nlNodePoint->m_mChildren[ nlin] = walkTree(  common->e);
+							return nlNodePoint;
+						}
+						else return walkTree(  common->e);
+					}
+					else{					
+						 struct cexp1 *common = ((const ASL_fg *) asl) -> I.cexps1_ + (j - ncom0);
+						//walk the tree for the non-linear stuff
+						
+						// now add the linear terms
+						int nlin = common -> nlin;
+						//std::cout << "Number of linear terms in common expression " << nlin << std::endl;
+						 
+						if( nlin > 0) {
+							nlNodePoint = new OSnLNodeSum();
+							nlNodePoint->inumberOfChildren = nlin + 1;
+							nlNodePoint->m_mChildren = new OSnLNode*[ nlin + 1];			
+							// we have linear variables
+							// get the index and coefficient
+							linpart *L = common -> L;
+							for(int kj = 0; kj < nlin; kj++) {
+								
+								// get the coefficient
+								//std::cout << "Linear coefficient  "  << L [kj].fac << std::endl;
+								 
+								// get the index
+								//std::cout  << "Variable index  "  << ((uintptr_t) (L [kj].v.rp) - (uintptr_t) VAR_E) / sizeof (expr_v) << std::endl;
+								// add an OSnLSumNode with the linear terms
+								nlNodePoint->m_mChildren[ kj] = new OSnLNodeVariable;
+								nlNodeVariablePoint = (OSnLNodeVariable*)nlNodePoint->m_mChildren[ kj];
+								nlNodeVariablePoint->coef = L [kj]. fac;
+								nlNodeVariablePoint->idx = ((uintptr_t) (L [kj].v.rp) - (uintptr_t) VAR_E) / sizeof (expr_v);
+							}
+							nlNodePoint->m_mChildren[ nlin] = walkTree(  common->e);
+							return nlNodePoint;
+						}
+						else return walkTree(  common->e);
+					}
+				}
+				//if(e->a > osinstance->getVariableNumber() ) throw ErrorClass("OS cannot handle AMPL user defined variables, please reformulate");
 				nlNodeVariablePoint = new OSnLNodeVariable;
 				nlNodeVariablePoint->idx = e->a;
 				nlNodeVariablePoint->coef = 1.0; 
 				return nlNodeVariablePoint;
-				
+				break;
 			default:
-			std::ostringstream outStr;
-			std::string error;
-			outStr  << endl;
-			outStr  << endl;
-			error = "ERROR:  An unsupported operator found, AMPL operator number =  "  ;
-			outStr << error;
-			outStr << opnum;
-			outStr << endl;
-			error = outStr.str();
-			throw ErrorClass( error );
+				std::ostringstream outStr;
+				std::string error;
+				outStr  << endl;
+				outStr  << endl;
+				error = "ERROR:  An unsupported operator found, AMPL operator number =  "  ;
+				outStr << error;
+				outStr << opnum;
+				outStr << endl;
+				error = outStr.str();
+				throw ErrorClass( error );
 		}//end switch	
 	}//end try
 	catch(const ErrorClass& eclass){
@@ -381,8 +469,8 @@ bool OSnl2osil::createOSInstance(){
 	//
 	if((nlc + nlo) > 0){
 		OSnLNode* m_treeRoot;
-		cout << nlc << endl;
-		cout << nlo << endl;
+		//cout << nlc << endl;
+		//cout << nlo << endl;
 		osinstance->instanceData->nonlinearExpressions->numberOfNonlinearExpressions = nlc + nlo;
 		osinstance->instanceData->nonlinearExpressions->nl = new Nl*[ nlc + nlo ];
 		int iNLidx = 0;
@@ -402,7 +490,7 @@ bool OSnl2osil::createOSInstance(){
 		if(nlo > 0){
 			while ( iNLidx < nlc + nlo){
 				m_treeRoot = walkTree ((OBJ_DE + iNLidx - nlc)->e);
-				std::cout << "CREATING A NEW NONLINEAR TERM IN THE OBJECTIVE" << std::endl;
+				//std::cout << "CREATING A NEW NONLINEAR TERM IN THE OBJECTIVE" << std::endl;
 				osinstance->instanceData->nonlinearExpressions->nl[ iNLidx] = new Nl();
 				osinstance->instanceData->nonlinearExpressions->nl[ iNLidx]->idx = -1 - (iNLidx - nlc);
 				osinstance->instanceData->nonlinearExpressions->nl[ iNLidx]->osExpressionTree = new OSExpressionTree();
@@ -412,14 +500,19 @@ bool OSnl2osil::createOSInstance(){
 			}
 		}
 		//std::cout << "DONE WALKING THE TREE FOR NONLINEAR OBJECTIVE TERMS" << std::endl;
+		
 
 	}
+	delete objectiveCoefficients;
+	objectiveCoefficients = NULL;
 	//
 	// end loop of nonlinear rows
-	//    
-	//OSiLWriter osilwriter;
-	//std::cout << "WRITE THE INSTANCE" << std::endl;
-	//std::cout << osilwriter.writeOSiL( osinstance) << std::endl;
-	//std::cout << "DONE WRITE THE INSTANCE" << std::endl;
+	//  
+	/*
+	OSiLWriter osilwriter;
+	std::cout << "WRITE THE INSTANCE" << std::endl;
+	std::cout << osilwriter.writeOSiL( osinstance) << std::endl;
+	std::cout << "DONE WRITE THE INSTANCE" << std::endl;
+	*/
 	return true;
 }

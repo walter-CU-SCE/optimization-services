@@ -21,8 +21,6 @@
 
 #include "OSInstance.h"
 #include "OSnLNode.h"
-#include "nlp.h"
-#include <asl.h>
 #include <string>
 
 
@@ -38,6 +36,12 @@
  * in AMPL nl format and creating an OSInstance object in OSiL format
  * 
  */
+
+struct ograd;
+struct ASL;
+struct expr;
+
+
 class OSnl2osil
 {
 public:

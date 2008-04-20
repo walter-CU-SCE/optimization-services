@@ -17,6 +17,7 @@
 #include <iostream>
 #include "OSConfig.h"
 
+
 #ifdef HAVE_CSTDIO
 # include <cstdio>
 #else
@@ -181,7 +182,7 @@ endelementname (<\/[a-zA-Z][a-zA-Z0-9.:_]+)
 
 
 
-[a-zA-X0-9.:_*#$@ \n]+ { YY_PRINT;  yylval->charval = strdup(yytext);   return(ELEMENTTEXT); }
+[a-zA-X0-9.:_*#$@ \n]+ { YY_PRINT;  yylval->charval = strdup( yytext);   yyextra->errorText = yylval->charval;    /*yylval->charval = yytext;*/  return (ELEMENTTEXT); }
 
 "<!--" BEGIN comment;
  <comment>. |
@@ -198,10 +199,10 @@ endelementname (<\/[a-zA-Z][a-zA-Z0-9.:_]+)
 
 
 
-<attributetext>([^\"\'])+ {YY_PRINT;    yylval->charval = strdup(yytext);
+<attributetext>([^\"\'])+ {YY_PRINT;    /*yylval->charval = strdup(yytext);*/ yylval->charval = yytext;
 							BEGIN 0;  return(ATTRIBUTETEXT);}
 							
-<osrlattributetext>([^>])* {YY_PRINT;  BEGIN 0; yylval->charval = strdup(yytext); return(OSRLATTRIBUTETEXT);}
+<osrlattributetext>([^>])* {YY_PRINT;  BEGIN 0; /*yylval->charval = strdup(yytext);*/  yylval->charval = yytext; return(OSRLATTRIBUTETEXT);}
 
 
 .|\n { 

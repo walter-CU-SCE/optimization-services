@@ -44,10 +44,6 @@
 #include "OSErrorClass.h"
 
 
-#ifdef COIN_HAS_LINDO    
-#include "LindoSolver.h"
-#endif  
-
 
  
 
@@ -81,18 +77,18 @@ int  main(){
 		// now the coefficient
 		SparseVector *objcoeff;
 		objcoeff = new SparseVector(1);   
-		objcoeff->indexes = new int[1];
-		objcoeff->values = new double[1];
 		objcoeff->indexes[ 0] = 1;
 		objcoeff->values[ 0] = .4;
 		//bool addObjective(int index, string name, string maxOrMin, double constant, double weight, SparseVector* objectiveCoefficients);
 		osinstance->addObjective(-1, "objfunction", "max", 0.0, 1.0, objcoeff);
+		objcoeff->bDeleteArrays = true;
+		delete objcoeff;
 		//
 		// now the constraints
 		osinstance->setConstraintNumber( 6); 
 		//bool addConstraint(int index, string name, double lowerBound, double upperBound, double constant);
 		// note: we could use setConstraints() and add all the constraints with one method call -- below is easier
-		osinstance->addConstraint(0, "row0", -OSDBL_MAX, 4, 0);
+		osinstance->addConstraint(0, "row0", -OSDBL_MAX, 4, 0); 
 		osinstance->addConstraint(1, "row1", -OSDBL_MAX, 6, 0);
 		osinstance->addConstraint(2, "row2", -OSDBL_MAX, 0, 0);
 		osinstance->addConstraint(3, "row3", 0 , OSDBL_MAX, 0); 
@@ -316,21 +312,6 @@ int  main(){
 		cout << osilwriter->writeOSiL( osinstance);
 		// done writing the model
 		cout << "Done writing the Model" << endl;
-		#ifdef COIN_HAS_LINDO
-		cout << "Now Solve with LINDO" << endl;
-		cout << "create a new LINDO Solver for OSiL string solution" << endl;
-		LindoSolver *lindo;
-		lindo = new LindoSolver();	
-		lindo->osinstance = osinstance;
-		cout << "call the LINDO Solver" << endl;
-		lindo->solve();
-		cout << "Here is the LINDO solver solution" << endl;
-		cout << lindo->osrl << endl;
-		// do the garbage collection 
-		lindo->osinstance = NULL;
-		delete lindo;
-		lindo = NULL;
-		#endif
 		delete osinstance;
 		osinstance = NULL;
 		delete osilwriter;

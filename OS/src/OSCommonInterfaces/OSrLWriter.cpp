@@ -54,7 +54,7 @@ OSrLWriter::~OSrLWriter(){
  
 std::string OSrLWriter::writeOSrL( OSResult *theosresult){
 	m_OSResult = theosresult;
-	std::ostringstream outStr;
+	std::ostringstream outStr;  
 	#ifdef WIN_
 	const char	dirsep='\\';
 	#else
@@ -62,7 +62,9 @@ std::string OSrLWriter::writeOSrL( OSResult *theosresult){
 	#endif
   	// Set directory containing stylesheet files.
   	std::string xsltDir;
-    xsltDir = dirsep == '/' ? "../stylesheets" : "..\\stylesheets";
+    xsltDir = dirsep == '/' ? "../stylesheets/" : "..\\stylesheets\\";
+    // always go with '/' -- it is a hypertext reference
+    xsltDir = "../stylesheets/";
 	int i, j;
 	if(m_OSResult == NULL)  return outStr.str(); 
 	outStr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ; 
@@ -173,7 +175,7 @@ std::string OSrLWriter::writeOSrL( OSResult *theosresult){
 							if(m_OSResult->resultData->optimization->solution[i]->variables->numberOfOtherVariableResult > 0){
 								for(int k = 0; k < m_OSResult->resultData->optimization->solution[i]->variables->numberOfOtherVariableResult; k++){
 									outStr << "<other" ;
-									outStr << " name=\"";\
+									outStr << " name=\"";
 									outStr << m_OSResult->resultData->optimization->solution[i]->variables->other[k]->name;
 									outStr << "\"" ;
 									outStr << " description=\"";

@@ -20,7 +20,7 @@
 
 # Author:  Andreas Waechter           IBM    2006-04-13
 
-# Copyright (C) 2006 International Business Machines and others.
+# Copyright (C) 2006, 2007 International Business Machines and others.
 # All Rights Reserved.
 # This file is distributed under the Common Public License.
 
@@ -62,6 +62,7 @@ DIST_COMMON = README $(am__configure_deps) \
 	$(srcdir)/../ltmain.sh $(srcdir)/../missing \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/os_addlibs.txt.in $(top_srcdir)/configure \
+	$(top_srcdir)/examples/addCuts/Makefile.in \
 	$(top_srcdir)/examples/algorithmicDiff/Makefile.in \
 	$(top_srcdir)/examples/instanceGenerator/Makefile.in \
 	$(top_srcdir)/examples/osTestCode/Makefile.in \
@@ -80,7 +81,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/inc/config_os.h
 CONFIG_CLEAN_FILES = examples/instanceGenerator/Makefile \
 	examples/osTestCode/Makefile examples/algorithmicDiff/Makefile \
-	os_addlibs.txt
+	examples/addCuts/Makefile os_addlibs.txt
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -122,16 +123,20 @@ AUTOMAKE = @AUTOMAKE@
 AUX_DIR = @AUX_DIR@
 AWK = @AWK@
 BUILDTOOLSDIR = @BUILDTOOLSDIR@
+CBCDOCDIR = @CBCDOCDIR@
 CBCOBJDIR = @CBCOBJDIR@
 CBCSRCDIR = @CBCSRCDIR@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CDEFS = @CDEFS@
 CFLAGS = @CFLAGS@
+CGLDOCDIR = @CGLDOCDIR@
 CGLOBJDIR = @CGLOBJDIR@
 CGLSRCDIR = @CGLSRCDIR@
+CLPDOCDIR = @CLPDOCDIR@
 CLPOBJDIR = @CLPOBJDIR@
 CLPSRCDIR = @CLPSRCDIR@
+COINUTILSDOCDIR = @COINUTILSDOCDIR@
 COINUTILSOBJDIR = @COINUTILSOBJDIR@
 COINUTILSSRCDIR = @COINUTILSSRCDIR@
 COIN_BUILD_GLPK_FALSE = @COIN_BUILD_GLPK_FALSE@
@@ -169,6 +174,7 @@ COIN_HAS_SYMPHONY_TRUE = @COIN_HAS_SYMPHONY_TRUE@
 COIN_HAS_VOL_FALSE = @COIN_HAS_VOL_FALSE@
 COIN_HAS_VOL_TRUE = @COIN_HAS_VOL_TRUE@
 CPP = @CPP@
+CPPADDOCDIR = @CPPADDOCDIR@
 CPPADOBJDIR = @CPPADOBJDIR@
 CPPADSRCDIR = @CPPADSRCDIR@
 CPPFLAGS = @CPPFLAGS@
@@ -187,6 +193,7 @@ DBG_CXXFLAGS = @DBG_CXXFLAGS@
 DBG_FFLAGS = @DBG_FFLAGS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DYLPDOCDIR = @DYLPDOCDIR@
 DYLPOBJDIR = @DYLPOBJDIR@
 DYLPSRCDIR = @DYLPSRCDIR@
 ECHO = @ECHO@
@@ -207,6 +214,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IPOPTDOCDIR = @IPOPTDOCDIR@
 IPOPTOBJDIR = @IPOPTOBJDIR@
 IPOPTSRCDIR = @IPOPTSRCDIR@
 KNITROINCDIR = @KNITROINCDIR@
@@ -230,9 +238,13 @@ MPICC = @MPICC@
 MPICXX = @MPICXX@
 MPIF77 = @MPIF77@
 OBJEXT = @OBJEXT@
+OPENMP_FALSE = @OPENMP_FALSE@
+OPENMP_TRUE = @OPENMP_TRUE@
 OPT_CFLAGS = @OPT_CFLAGS@
 OPT_CXXFLAGS = @OPT_CXXFLAGS@
 OPT_FFLAGS = @OPT_FFLAGS@
+OSDOCDIR = @OSDOCDIR@
+OSIDOCDIR = @OSIDOCDIR@
 OSIOBJDIR = @OSIOBJDIR@
 OSISRCDIR = @OSISRCDIR@
 OSOBJDIR = @OSOBJDIR@
@@ -250,11 +262,13 @@ RPATH_FLAGS = @RPATH_FLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYMPHONYDOCDIR = @SYMPHONYDOCDIR@
 SYMPHONYOBJDIR = @SYMPHONYOBJDIR@
 SYMPHONYSRCDIR = @SYMPHONYSRCDIR@
 USEMULTIPLYDEFINED_FALSE = @USEMULTIPLYDEFINED_FALSE@
 USEMULTIPLYDEFINED_TRUE = @USEMULTIPLYDEFINED_TRUE@
 VERSION = @VERSION@
+VOLDOCDIR = @VOLDOCDIR@
 VOLOBJDIR = @VOLOBJDIR@
 VOLSRCDIR = @VOLSRCDIR@
 VPATH_DISTCLEANFILES = @VPATH_DISTCLEANFILES@
@@ -314,6 +328,7 @@ oldincludedir = @oldincludedir@
 osicbclib = @osicbclib@
 osiclplib = @osiclplib@
 osidylplib = @osidylplib@
+osiglpklib = @osiglpklib@
 osilib = @osilib@
 osisymphonylib = @osisymphonylib@
 osivollib = @osivollib@
@@ -345,6 +360,7 @@ EXTRA_DIST = $(am__append_2)
 #                  Installation of the addlibs file                    #
 ########################################################################
 addlibsfile = os_addlibs.txt
+addlibsdir = $(prefix)/share/doc/coin/$(PACKAGE_NAME)/
 
 ########################################################################
 #                         Maintainer Stuff                             #
@@ -353,7 +369,7 @@ addlibsfile = os_addlibs.txt
 # Files that are generated and should be cleaned with make distclean
 DISTCLEANFILES = $(am__append_3) $(VPATH_DISTCLEANFILES)
 DocFiles = README AUTHORS LICENSE
-DocInstallDir = $(prefix)/share/doc/$(PACKAGE_NAME)
+DocInstallDir = $(prefix)/share/doc/coin/$(PACKAGE_NAME)
 all: all-recursive
 
 .SUFFIXES:
@@ -412,6 +428,8 @@ examples/instanceGenerator/Makefile: $(top_builddir)/config.status $(top_srcdir)
 examples/osTestCode/Makefile: $(top_builddir)/config.status $(top_srcdir)/examples/osTestCode/Makefile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 examples/algorithmicDiff/Makefile: $(top_builddir)/config.status $(top_srcdir)/examples/algorithmicDiff/Makefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+examples/addCuts/Makefile: $(top_builddir)/config.status $(top_srcdir)/examples/addCuts/Makefile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 os_addlibs.txt: $(top_builddir)/config.status $(srcdir)/os_addlibs.txt.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -561,7 +579,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/.. $(distdir)/../BuildTools $(distdir)/examples/algorithmicDiff $(distdir)/examples/instanceGenerator $(distdir)/examples/osTestCode $(distdir)/inc $(distdir)/m4
+	$(mkdir_p) $(distdir)/. $(distdir)/.. $(distdir)/../BuildTools $(distdir)/examples/addCuts $(distdir)/examples/algorithmicDiff $(distdir)/examples/instanceGenerator $(distdir)/examples/osTestCode $(distdir)/inc $(distdir)/m4
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -827,12 +845,12 @@ run_parsers:
 	make
 
 install-exec-local: install-doc
-	$(install_sh_DATA) $(addlibsfile) $(DESTDIR)$(libdir)/$(addlibsfile)
+	$(install_sh_DATA) $(addlibsfile) $(addlibsdir)/$(addlibsfile)
 
 uninstall-local: uninstall-doc
 	rm -f $(DESTDIR)$(libdir)/$(addlibsfile)
 
-install-doc:
+install-doc: $(DocFiles)
 	test -z "$(DocInstallDir)" || $(mkdir_p) "$(DESTDIR)$(DocInstallDir)"
 	for file in $(DocFiles); do \
 	  if test -f "$$file"; then dir=; else dir="$(srcdir)/"; fi; \

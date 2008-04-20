@@ -52,6 +52,21 @@ AM_CPPFLAGS =\
 	-I`$(CYGPATH_W) $(CBCOBJDIR)/inc` \
 	-I`$(CYGPATH_W) $(CLPSRCDIR)/src` \
 	-I`$(CYGPATH_W) $(CLPOBJDIR)/inc` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglClique` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglDuplicateRow` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglFlowCover` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglGomory` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglKnapsackCover` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglMixedIntegerRounding` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglMixedIntegerRounding2` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglOddHole` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglPreProcess` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglProbing` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglRedSplit` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglTwomir` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglLandP` \
+	-I`$(CYGPATH_W) $(CGLSRCDIR)/src/CglResidualCapacity` \
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSUtils` \
 	-I`$(CYGPATH_W) $(OSISRCDIR)/src` \
 	-I`$(CYGPATH_W) $(OSISRCDIR)/inc` \
@@ -60,7 +75,14 @@ AM_CPPFLAGS =\
 	-I`$(CYGPATH_W) $(OSISRCDIR)/src/OsiClp` \
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src` \
 	-I`$(CYGPATH_W) $(CPPADSRCDIR)` \
-	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSCommonInterfaces` 
+	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSCommonInterfaces` \
+	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSParsers` 
+	
+	
+if COIN_HAS_ASL
+  AM_CPPFLAGS += -I`$(CYGPATH_W) $(OSSRCDIR)/src/ThirdPartyASL` 
+  AM_CPPFLAGS += $(ASL_CPPFLAGS) 
+endif
 
 
 if COIN_HAS_CPX

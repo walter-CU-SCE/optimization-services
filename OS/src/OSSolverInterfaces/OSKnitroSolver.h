@@ -27,6 +27,7 @@
 #include "OSConfig.h" 
 #include "OSDefaultSolver.h"
 #include "OSrLWriter.h"
+#include "OSiLWriter.h"
 #include "OSInstance.h"
 #include "OSParameters.h"
 #include "OSnLNode.h"
@@ -77,41 +78,23 @@
 
 
 
-#include<vector>
-#include <map>  
+//#include<vector>
+//#include <map>  
 
 
-/*! \class KnitroSolver
- *  \brief the KnitroSolver class solves problems using Knitro.
- * 
- * @author Robert Fourer, Jun Ma, Kipp Martin
- * @version 1.0, 03/14/2004
- * @since OS 1.0
- * 
- * \remarks
- * this class takes an OSiL instance and optimizes it using
- * the Knitro solver
- * 
- */
-class KnitroSolver : public DefaultSolver, public NlpProblemDef {  
-	
+
+class KnitroProblem : public NlpProblemDef {
 public:
-	/** the KnitroSolver class constructor */
-	KnitroSolver();
-
-	/** the KnitroSolver class constructor */
-	~KnitroSolver();
 	
-	/** solve results in an instance being read into the Knitro
-	 * data structrues and optimized */ 
-	virtual void  solve() throw (ErrorClass) ;
+	/** the IpoptProblemclass constructor */
+	KnitroProblem(OSInstance *osinstance_ , OSResult *osresult_);
 	
-   	/**
-   	 * use this for debugging, print out the instance that
-   	 * the solver thinks it has and compare this with the OSiL
-   	 * file
-   	 */		
-	void dataEchoCheck(); 
+	/** the IpoptProblem class destructor */
+	virtual ~KnitroProblem();
+	
+	OSResult *osresult;
+	
+	OSInstance *osinstance;
 	
 	//Knitro specific methods
 	//++ Declare virtual base class methods that are implemented here.
@@ -139,6 +122,50 @@ public:
                  const double * const  daLambda,
                        double * const  daHV,
                        void   *        userParams);
+
+	std::string knitroErrorMsg;
+};
+
+
+/*! \class KnitroSolver
+ *  \brief the KnitroSolver class solves problems using Knitro.
+ * 
+ * @author Robert Fourer, Jun Ma, Kipp Martin
+ * @version 1.0, 03/14/2004
+ * @since OS 1.0
+ * 
+ * \remarks
+ * this class takes an OSiL instance and optimizes it using
+ * the Knitro solver
+ * 
+ */
+class KnitroSolver : public DefaultSolver {  
+	
+public:
+	
+	/** the KnitroSolver class constructor */
+	KnitroSolver();
+
+	/** the KnitroSolver class constructor */
+	~KnitroSolver();
+	
+	/*! \fn void CoinSolver::buildSolverInstance() 
+	 *  \brief The implementation of the virtual functions. 
+	 *  \return void.
+	 */	
+	virtual void  buildSolverInstance() throw(ErrorClass);
+	
+	/** solve results in an instance being read into the Knitro
+	 * data structrues and optimized */ 
+	virtual void  solve() throw (ErrorClass) ;
+	
+   	/**
+   	 * use this for debugging, print out the instance that
+   	 * the solver thinks it has and compare this with the OSiL
+   	 * file
+   	 */		
+	void dataEchoCheck(); 
+	
 private:
 
 	OSrLWriter  *osrlwriter;
@@ -161,4 +188,6 @@ private:
 	std::string knitroErrorMsg;
 
 };
+
+
 #endif

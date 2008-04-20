@@ -77,7 +77,7 @@
 
 
 
-
+// needed for cygwin gcc 3.*,*
 #endif /* HAVE_CONFIG_H */
 #endif /*__HAVE_COINUTILS_CONFIG_H__*/
 //#ifdef WIN_

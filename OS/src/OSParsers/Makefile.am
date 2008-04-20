@@ -43,6 +43,16 @@ AM_CPPFLAGS =\
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSSolverInterfaces` \
 	-I`$(CYGPATH_W) $(CPPADSRCDIR)` \
 	-I`$(CYGPATH_W) $(OSSRCDIR)/src/OSCommonInterfaces` 
+	
+	
+if COIN_HAS_ASL
+  AM_CPPFLAGS += -I`$(CYGPATH_W) $(OSSRCDIR)/src/ThirdPartyASL` 
+  AM_CPPFLAGS += $(ASL_CPPFLAGS) 
+endif
+
+#if USE_DTOA
+#AM_CPPFLAGS += -DUSE_DTOA=1
+#endif
 
 # This line is necessary to allow VPATH compilation with MS compilers
 # on Cygwin

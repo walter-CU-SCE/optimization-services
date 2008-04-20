@@ -32,7 +32,8 @@ int osrllex_destroy (void* yyscanner );
 int osrlget_lineno( void* yyscanner);
 char *osrlget_text (void* yyscanner );
 void osrlset_lineno (int line_number , void* yyscanner );
-OSResult *yygetOSResult( std::string parsestring) ;
+void osrlset_extra (OSrLParserData* parserData , void* yyscanner );
+void  yygetOSResult(const char *ch, OSResult* m_osresult, OSrLParserData *m_parserData ) throw(ErrorClass);
 
 
 %}
@@ -60,7 +61,7 @@ this fails on in Mac OS X
 
 %{
 
-void osrlerror(YYLTYPE* type, OSResult *osresult,  OSrLParserData *parserData ,const char* errormsg );
+void osrlerror(YYLTYPE* type, OSResult *osresult,  OSrLParserData *parserData ,const char* errormsg ) ;
 int osrllex(YYSTYPE* lvalp,  YYLTYPE* llocp, void* scanner);
  
 #define scanner parserData->scanner
@@ -107,13 +108,13 @@ osrldoc: osrlstart resultHeader resultData
 		for(int solIdx = 0; solIdx <  parserData->numberOfSolutions; solIdx++){
 			osresult->setSolutionStatus(solIdx, parserData->statusType, parserData->statusDescription);
 			osresult->setPrimalVariableValues(solIdx, parserData->primalSolution[ solIdx]);
-			osresult->setNumberOfOtherVariableResult(solIdx, parserData->numberOfOtherVariableResult);
+		    osresult->setNumberOfOtherVariableResult(solIdx, parserData->numberOfOtherVariableResult);
 			for(int k = 0; k < parserData->numberOfOtherVariableResult; k++){
 				osresult->setAnOtherVariableResult(solIdx, k, parserData->otherVarVec[ k]->name, parserData->otherVarVec[ k]->description, parserData->otherVarVec[ k]->otherVarText);				
 			}
-			osresult->setDualVariableValues(solIdx, parserData->dualSolution[ solIdx]);
-			osresult->setObjectiveValues(solIdx, parserData->objectiveValues[ solIdx]);
-			osresult->setSolutionObjectiveIndex(solIdx,  *(parserData->objectiveIdx + solIdx));
+			if( (parserData->dualSolution != NULL) &&  (parserData->dualSolution[ solIdx] != NULL) )  osresult->setDualVariableValues(solIdx, parserData->dualSolution[ solIdx]);
+			if( (parserData->objectiveValues != NULL) &&  (parserData->objectiveValues[ solIdx] != NULL) ) osresult->setObjectiveValues(solIdx, parserData->objectiveValues[ solIdx]);
+		    osresult->setSolutionObjectiveIndex(solIdx,  *(parserData->objectiveIdx + solIdx));
 		}
 	}
 }
@@ -138,28 +139,28 @@ generalstatusatt: TYPEATT ATTRIBUTETEXT quote  { osresult->setGeneralStatusType(
 
 serviceURI: 
 | SERVICEURISTARTANDEND
-| SERVICEURISTART ELEMENTTEXT SERVICEURIEND {osresult->setServiceURI( $2);}
+| SERVICEURISTART ELEMENTTEXT SERVICEURIEND {osresult->setServiceURI( $2); free($2); parserData->errorText = NULL;}
 | SERVICEURISTART SERVICEURIEND ;
 
 
 serviceName: 
 | SERVICENAMESTARTANDEND
-| SERVICENAMESTART ELEMENTTEXT SERVICENAMEEND {osresult->setServiceName( $2);}
+| SERVICENAMESTART ELEMENTTEXT SERVICENAMEEND {osresult->setServiceName( $2);  free($2);   parserData->errorText = NULL;}
 | SERVICENAMESTART SERVICENAMEEND ;
 
 instanceName: 
 | INSTANCENAMESTARTANDEND
-| INSTANCENAMESTART ELEMENTTEXT INSTANCENAMEEND {osresult->setInstanceName( $2) ;}
+| INSTANCENAMESTART ELEMENTTEXT INSTANCENAMEEND {osresult->setInstanceName( $2) ;  free($2);   parserData->errorText = NULL;}
 | INSTANCENAMESTART INSTANCENAMEEND ;
 
 jobID: 
 | JOBIDSTARTANDEND
-| JOBIDSTART ELEMENTTEXT JOBIDEND {osresult->setJobID( $2);}
+| JOBIDSTART ELEMENTTEXT JOBIDEND {osresult->setJobID( $2);  free($2);  parserData->errorText = NULL;}
 | JOBIDSTART JOBIDEND ;
 
 headerMessage: 
 | MESSAGESTARTANDEND
-| MESSAGESTART ELEMENTTEXT MESSAGEEND {osresult->setGeneralMessage( $2);}
+| MESSAGESTART ELEMENTTEXT MESSAGEEND {osresult->setGeneralMessage( $2);  free($2);  parserData->errorText = NULL;}
 | MESSAGESTART MESSAGEEND ;
 
 resultData: RESULTDATASTARTANDEND 
@@ -176,21 +177,21 @@ optimization: OPTIMIZATIONSTART anotherOptATT
 {
 // we now have the basic problem parameters
 	if(parserData->numberOfSolutions > 0){
-			parserData->primalSolution = new double* [parserData->numberOfSolutions];
-			parserData->dualSolution = new double*[ parserData->numberOfSolutions];
-			parserData->objectiveValues = new double*[ parserData->numberOfSolutions];
-			parserData->objectiveIdx = new int[ parserData->numberOfSolutions];
 			if( parserData->numberOfVariables > 0){
+				parserData->primalSolution = new double* [parserData->numberOfSolutions];
 				for(int i = 0; i < parserData->numberOfSolutions; i++){
 					parserData->primalSolution[ i] = new double[ parserData->numberOfVariables];
 				}
 			}
-			if( parserData->numberOfConstraints > 0){
-				for(int i = 0; i < parserData->numberOfSolutions; i++){
-					parserData->dualSolution[ i] = new double[ parserData->numberOfConstraints];
-				}
-			}
+			//if( parserData->numberOfConstraints > 0){
+			//	parserData->dualSolution = new double*[ parserData->numberOfSolutions];
+			//	for(int i = 0; i < parserData->numberOfSolutions; i++){
+			//		parserData->dualSolution[ i] = new double[ parserData->numberOfConstraints];
+			//	}
+			//}
 			if( parserData->numberOfObjectives > 0){
+				parserData->objectiveValues = new double*[ parserData->numberOfSolutions];
+				parserData->objectiveIdx = new int[ parserData->numberOfSolutions];
 				for(int i = 0; i < parserData->numberOfSolutions; i++){
 					parserData->objectiveValues[ i] = new double[ parserData->numberOfObjectives];
 				}
@@ -228,7 +229,7 @@ solution:  OPTIMIZATIONEND
 | solution anothersolution  OPTIMIZATIONEND;
 
 
-anothersolution: SOLUTIONSTART objectiveIDXATT GREATERTHAN status message variables objectives constraints otherSolution   {parserData->solutionIdx++;};
+anothersolution: SOLUTIONSTART objectiveIDXATT GREATERTHAN status message variables objectives  constraints  otherSolution   {parserData->solutionIdx++;};
 
 
 
@@ -274,18 +275,21 @@ otherVariables:
 | otherVariables otherVariableResult;
 
 otherVariableResult:  OTHERSTART {  
-    parserData->numberOfOtherVariableResult++;
+   // parserData->numberOfOtherVariableResult++;
 	parserData->otherVarStruct = new OtherVariableResultStruct(); 
 	parserData->otherVarStruct->otherVarText = new std::string[parserData->numberOfVariables];} anotherotherVarATT GREATERTHAN {if(parserData->otherNamePresent == false) osrlerror(NULL, NULL, NULL, "other element requires name attribute"); 
 	parserData->otherNamePresent = false;  
-	}  othervar OTHEREND {parserData->otherVarVec.push_back( parserData->otherVarStruct);};
+	}  othervar OTHEREND {parserData->otherVarVec.push_back( parserData->otherVarStruct); parserData->numberOfOtherVariableResult++; };
  
 othervar: anotherothervar
 | othervar anotherothervar;
 
 anotherothervar: VARSTART anIDXATT  GREATERTHAN ELEMENTTEXT  VAREND { 
+std::ostringstream outStr;
+outStr << $4;
+parserData->otherVarStruct->otherVarText[parserData->kounter] =  outStr.str();
+free($4); parserData->errorText = NULL;
 if(parserData->kounter < 0 || parserData->kounter > parserData->numberOfVariables - 1) osrlerror(NULL, NULL, NULL, "index must be greater than 0 and less than the number of variables");
-parserData->otherVarStruct->otherVarText[parserData->kounter] = $4;
 }
 |
 VARSTART anIDXATT  GREATERTHAN DOUBLE  VAREND { 
@@ -321,7 +325,16 @@ anotherobj: OBJSTART anIDXATT GREATERTHAN DOUBLE OBJEND { *(parserData->objectiv
 
 
 constraints:
-| CONSTRAINTSSTART GREATERTHAN DUALVALUESSTART GREATERTHAN con DUALVALUESEND otherConstraints CONSTRAINTSEND;
+| CONSTRAINTSSTART GREATERTHAN DUALVALUESSTART
+{
+			if( parserData->numberOfConstraints > 0){
+				parserData->dualSolution = new double*[ parserData->numberOfSolutions];
+				for(int i = 0; i < parserData->numberOfSolutions; i++){
+					parserData->dualSolution[ i] = new double[ parserData->numberOfConstraints];
+				}
+			}
+}
+ GREATERTHAN con DUALVALUESEND otherConstraints CONSTRAINTSEND;
 
 con: anothercon
 | con anothercon;
@@ -357,7 +370,7 @@ otherSolution: SOLUTIONEND
 
 quote: xmlWhiteSpace QUOTE;
 
-xmlWhiteSpaceChar: ' '
+xmlWhiteSpaceChar: ' ' 
 				| '\t'
 				| '\r'
 				| '\n' ;
@@ -377,30 +390,23 @@ void osrlerror(YYLTYPE* mytype, OSResult *osresult, OSrLParserData* parserData, 
 	outStr << "See line number: " << osrlget_lineno( scanner) << std::endl; 
 	outStr << "The offending text is: " << osrlget_text ( scanner ) << std::endl; 
 	error = outStr.str();
+	//printf("THIS DID NOT GET DESTROYED:   %s\n", parserData->errorText);
+	//if( (parserData->errorText != NULL) &&  (strlen(parserData->errorText) > 0) ) free(  parserData->errorText);
+	//osrllex_destroy( scanner);
 	throw ErrorClass( error);
 } //end osrlerror
 
-OSResult *yygetOSResult(std::string parsestring){
+void  yygetOSResult(const char *parsestring, OSResult *osresult, OSrLParserData *parserData) throw(ErrorClass){
 	try{
-		OSResult* osresult = NULL;
-		osresult = new OSResult();
-		OSrLParserData *parserData = NULL;
-		parserData = new OSrLParserData();
-		// call the flex scanner
-		osrllex_init( &scanner);
-		osrl_scan_string( parsestring.c_str(), scanner);
+		osrl_scan_string( parsestring, scanner);
 		osrlset_lineno (1 , scanner );
 		//
 		// call the Bison parser
 		//
 		if(  osrlparse( osresult,  parserData) != 0) {
-			osrllex_destroy(scanner);
-		 	delete parserData;
-		  	throw ErrorClass(  "Error parsing the OSiL");
+			//osrllex_destroy(scanner);
+		  	throw ErrorClass(  "Error parsing the OSrL");
 		 }
-		osrllex_destroy(scanner);
-		delete parserData;
-		return osresult;
 	}
 	catch(const ErrorClass& eclass){
 		throw ErrorClass(  eclass.errormsg); 

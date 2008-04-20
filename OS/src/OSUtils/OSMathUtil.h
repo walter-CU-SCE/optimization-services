@@ -21,8 +21,27 @@
 #ifndef MATHUTIL_H
 #define MATHUTIL_H
  
- #include "OSParameters.h"
+#include "OSParameters.h"
+#include "OSdtoa.h"
+#include "OSErrorClass.h"
 
+
+#include <sstream>  
+#include<string>
+
+
+#ifdef __cplusplus
+extern "C" std::string os_dtoa_format(double  x);
+extern "C" double os_strtod_wrap(const char *str,   char **strEnd);
+#else
+#ifdef __STDC__
+std::string os_dtoa_format(double  x);
+double os_strtod_wrap(const char *str,  char **strEnd);
+#endif
+#endif 
+
+
+using std::ostringstream; 
 
 /*!  \class MathUtil
  *  \brief this class has routines for linear algebra.
@@ -94,8 +113,34 @@ class MathUtil{
 	static SparseMatrix* convertLinearConstraintCoefficientMatrixToTheOtherMajor(
 			bool isColumnMajor, int startSize, int valueSize, int* start, int* index, 
 			double* value, int dimension);
+	
+	/**
+	 * 
+	 * @param x is the double that gets converted into a string
+	 * this takes the David Gay dtoa and converts to a formatted string
+	 */
+	std::string format_os_dtoa( double x);
+	
+	
+	/**
+	 * 
+	 * @param str is the char* string that gets converted to double
+	 * this method actually wraps around os_strtod (which is really the
+	 * David Gay version of strtod) and will throw an exception
+	 * if the str contains text or is in anyway not a valid number
+	 * str should be null terminated
+	 */
+	//double os_strtod_wrap(const char *str) throw(ErrorClass);
+	
+	/**
+	 * 
+	 * @param str is the char* string that gets converted to double
+	 * @param strEnd should point to the end of str
+	 * this method actually wraps around os_strtod (which is really the
+	 * David Gay version of strtod) and will throw an exception
+	 * if the str contains text or is in anyway not a valid number
+	 */
+	//double os_strtod_wrap(const char *str,  const char *strEnd) throw(ErrorClass);
 			
-
-
 };//class MathUtil
 #endif

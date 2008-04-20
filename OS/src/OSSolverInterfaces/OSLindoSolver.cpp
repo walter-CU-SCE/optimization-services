@@ -79,6 +79,7 @@ int CALLTYPE LSwriteMPIFile(pLSmodel pModel, char *pszFname);
 	nlNodeIdxLindo[OS_COS] = EP_COS; 
 
 LindoSolver::LindoSolver():
+	m_osilreader( NULL),
 	pEnv_( NULL), 
     pModel_( NULL),
     m_miSlackIdx( NULL),
@@ -106,9 +107,10 @@ LindoSolver::~LindoSolver() {
 #ifdef DEBUG
 	cout << "Lindo destructor called" << endl;
 #endif
-	m_mdRhsValue = NULL;
-	m_mdVarLB = NULL;
-	m_mdVarUB = NULL;
+	//delete[] m_mdRhsValue ;
+	//delete[] m_mdVarLB ;
+	//delete[] m_mdVarUB ;
+	delete[] m_mmcVarName ;
 	m_mdConLB = NULL;
 	m_mdConUB = NULL;
 	m_msVarName = NULL;
@@ -125,26 +127,27 @@ LindoSolver::~LindoSolver() {
 	m_mdRhsValue = NULL;
 	delete osrlwriter;
 	osrlwriter = NULL;
+	delete osresult;
+	osresult = NULL;
+	if(m_osilreader != NULL) delete m_osilreader;
+	m_osilreader = NULL;
 	cout << "Lindo Solver garbage collection done" << endl;
 }
 
- 
-void LindoSolver::solve()  {
+
+void LindoSolver::buildSolverInstance() throw (ErrorClass) {
 	try{
 		osresult = new OSResult();
 		if(osil.length() == 0 && osinstance == NULL) throw ErrorClass("there is no instance");
 		OSiLReader* osilreader = NULL;
-		clock_t start, finish;
-		double duration;
-		start = clock();
+		bool newOSiLReader = false;
 		if(osinstance == NULL){
 			osilreader = new OSiLReader();
 			osinstance = osilreader->readOSiL( osil);
+			newOSiLReader = true;
+			
 		}
 		
-		finish = clock();
-		duration = (double) (finish - start) / CLOCKS_PER_SEC;
-		std::cout << "Parsing took (seconds): "<< duration << std::endl;
 		OSiLWriter osilwriter;
 
 		if (osinstance->instanceData->constraints->numberOfConstraints <= 0){
@@ -167,12 +170,25 @@ void LindoSolver::solve()  {
 		if(m_iNumberNewSlacks > 0 && !addSlackVars()) throw ErrorClass("failed adding slack variables");
 		if( (osinstance->getNumberOfNonlinearExpressions() > 0 || osinstance->getNumberOfQuadraticTerms() > 0)
 			&& !processNonlinearExpressions()) throw ErrorClass("failed adding nonlinear terms");
-		//dataEchoCheck();
+		this->bCallbuildSolverInstance = true ;
+		//dataEchoCheck();		
+	}
+	catch(const ErrorClass& eclass){
+		std::cout << "THERE IS AN ERROR" << std::endl;
+		osresult->setGeneralMessage( eclass.errormsg);
+		osresult->setGeneralStatusType( "error");
+		osrl = osrlwriter->writeOSrL( osresult);
+		throw ErrorClass( osrl) ;
+	}				
+}//end buildSolverInstance()
+
+ 
+void LindoSolver::solve()  {
+	if( this->bCallbuildSolverInstance == false) buildSolverInstance();
+	try{
+
 		if( optimize() != true) throw ErrorClass("problem optimizing model");
-		delete osilreader;
-		osilreader = NULL;
-		delete osresult;
-		osresult = NULL;
+
 	}
 	catch(const ErrorClass& eclass){
 		osresult->setGeneralMessage( eclass.errormsg);
@@ -448,7 +464,7 @@ bool LindoSolver::optimize(){
 		//
 		//if(LSoptimize( pModel_, LS_METHOD_FREE, &nSolStatus) != 0)throw ErrorClass("Problem in optimize routine");
 		//if(LSsolveMIP( pModel_,  &nSolStatus) != 0)throw ErrorClass("Problem in optimize routine");
-		LSwriteMPIFile(pModel_, "/Users/kmartin/temp/hs71.mpi"); 
+		//LSwriteMPIFile(pModel_, "/Users/kmartin/temp/hs71.mpi"); 
 		// some testing // 
 		//cout << "NUMBER OF NEW SLACKS = " <<  m_iNumberNewSlacks << endl;
 		//for(int kj = 0; kj < osinstance->getConstraintNumber(); kj++){
@@ -461,7 +477,7 @@ bool LindoSolver::optimize(){
 			//m_iLindoErrorCode = LSoptimize( pModel_, LS_METHOD_FREE, &nSolStatus);
 			std::cout << "We are using the LINDO Global Optimizer" << std::endl;
 			std::cout << "We are using the LINDO Global Optimizer 222" << std::endl;
-			m_iLindoErrorCode = LSsolveGOP(pModel_, NULL) ;
+			m_iLindoErrorCode = LSsolveGOP(pModel_,  &nSolStatus) ;
 			lindoAPIErrorCheck("There was an ERROR in the call to the Optimizer solver");
 			LSgetInfo (pModel_, LS_IINFO_GOP_STATUS, &nSolStatus);
 		}
@@ -492,6 +508,10 @@ bool LindoSolver::optimize(){
 		x = new double[ osinstance->getVariableNumber() + m_iNumberNewSlacks];
 		srcost = new std::string[ osinstance->getVariableNumber() + m_iNumberNewSlacks];
 		drcost = new double[ osinstance->getVariableNumber() + m_iNumberNewSlacks];
+		for(int i = 0; i <  osinstance->getVariableNumber() + m_iNumberNewSlacks; i++){
+			drcost[i] = 0.0;
+			srcost[i] = "";
+		}
 		y = new double[ osinstance->getConstraintNumber() ];
 		z = new double[1]; 
 		switch( nSolStatus){

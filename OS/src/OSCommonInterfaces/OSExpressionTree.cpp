@@ -14,7 +14,7 @@
  * 
  */
 
-
+//#define DEBUG
 #include "OSExpressionTree.h"
 #include<vector>
 
@@ -25,7 +25,8 @@ OSExpressionTree::OSExpressionTree():
 	m_treeRoot( NULL),
 	mapVarIdx( NULL),
 	m_bIndexMapGenerated( false),
-	bCppADMustReTape( false){
+	bCppADMustReTape( false),
+	bDestroyNlNodes( true){
 }//end OSExpressionTree
 
  
@@ -33,10 +34,13 @@ OSExpressionTree::~OSExpressionTree(){
 	#ifdef DEBUG  
 	cout << "Inside the OSExpressionTree Destructor" << endl;
 	#endif
-	if(m_treeRoot != NULL) delete m_treeRoot;
-	m_treeRoot = NULL;
-	if(mapVarIdx != NULL) delete mapVarIdx;
-	mapVarIdx = NULL;
+	if( bDestroyNlNodes == true){
+		if(m_treeRoot != NULL) delete m_treeRoot;	
+	}
+	if(mapVarIdx != NULL){
+		delete mapVarIdx;
+		mapVarIdx = NULL;
+	}
 }//end ~OSExpressionTree 
 
 

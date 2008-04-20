@@ -188,8 +188,20 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* The size of a `double', as computed by sizeof. */
+#undef SIZEOF_DOUBLE
+
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of a `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* use to get lossless IO */
+#undef USE_DTOA
 
 /* use if OS is Cygwin and complier is gnu */
 #undef USE_OLD_UNISTD
@@ -199,3 +211,7 @@
 
 /* use if OS is Windows */
 #undef WIN_
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN

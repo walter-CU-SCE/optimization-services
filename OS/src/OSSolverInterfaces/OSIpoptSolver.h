@@ -30,6 +30,9 @@
 #include "OSFileUtil.h"  
 #include "OSErrorClass.h"
 
+#include "OSResult.h"
+#include "OSInstance.h"
+
 # include <cstddef>
 # include <cstdlib>
 # include <cctype>
@@ -64,43 +67,28 @@
 
 
 #include "IpTNLP.hpp"
+#include "IpIpoptApplication.hpp"
 
 using namespace Ipopt;
 
 
-/*! \class IpoptSolver
- *  \brief The IpoptSolver class solves problems using Ipopt.
- * 
- * @author Robert Fourer, Jun Ma, Kipp Martin
- * @version 1.0, 03/14/2004
- * @since OS 1.0
- * 
- * \remarks
- * this class takes an OSiL instance and optimizes it using
- * the COIN-OR Ipopt solver
- * 
- */
-class IpoptSolver : public DefaultSolver, public TNLP{  
-	
+
+// for Stefan
+class IpoptProblem : public TNLP{  
 public:
+	
+	/** the IpoptProblemclass constructor */
+	IpoptProblem(OSInstance *osinstance_ , OSResult *osresult_);
+	
+	/** the IpoptProblem class destructor */
+	virtual ~IpoptProblem();
+	
+	OSResult *osresult;
+	
+	OSInstance *osinstance;
+	
 
-	/** the IpoptSolver class constructor */
-	IpoptSolver();
 	
-	/** the IpoptSolver class destructor */
-	~IpoptSolver();
-	
-	/** solve results in an instance being read into the Ipopt
-	 * data structrues and optimized */ 
-	virtual void  solve() throw (ErrorClass) ;
-	
-   	/**
-   	 * use this for debugging, print out the instance that
-   	 * the solver thinks it has and compare this with the OSiL
-   	 * file
-   	 */	
-	void dataEchoCheck();
-
 	/** IPOpt specific methods for defining the nlp problem */
 	virtual bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
                             Index& nnz_h_lag, IndexStyleEnum& index_style);
@@ -161,6 +149,84 @@ public:
                                    IpoptCalculatedQuantities* ip_cq);
 	//@}
 
+
+	
+private:
+  /**@name Methods to block default compiler methods.
+   * The compiler automatically generates the following three methods.
+   *  Since the default compiler implementation is generally not what
+   *  you want (for all but the most simple classes), we usually 
+   *  put the declarations of these methods in the private section
+   *  and never implement them. This prevents the compiler from
+   *  implementing an incorrect "default" behavior without us
+   *  knowing. (See Scott Meyers book, "Effective C++")
+   *  
+   */
+  //@{
+  //  HS071_NLP();
+	IpoptProblem(const IpoptProblem&);
+	IpoptProblem& operator=(const IpoptProblem&);
+  //@}
+	
+	std::string ipoptErrorMsg;
+	
+};
+
+
+/*! \class IpoptSolver
+ *  \brief The IpoptSolver class solves problems using Ipopt.
+ * 
+ * @author Robert Fourer, Jun Ma, Kipp Martin
+ * @version 1.0, 03/14/2004
+ * @since OS 1.0
+ * 
+ * \remarks
+ * this class takes an OSiL instance and optimizes it using
+ * the COIN-OR Ipopt solver
+ * 
+ */
+//class IpoptSolver : public DefaultSolver, public TNLP{  
+
+class IpoptSolver : public DefaultSolver{ 	
+public:
+	
+
+
+	/** the IpoptSolver class constructor */
+	IpoptSolver();
+	
+	/** the IpoptSolver class destructor */
+	~IpoptSolver();
+	
+	SmartPtr<TNLP> nlp;
+	
+	SmartPtr<IpoptApplication> app;
+	
+	
+	/** solve results in an instance being read into the Ipopt
+	 * data structrues and optimized */ 
+	virtual void  solve() throw (ErrorClass) ;
+	
+	/*! \fn void CoinSolver::buildSolverInstance() 
+	 *  \brief The implementation of the virtual functions. 
+	 *  \return void.
+	 */	
+	virtual void  buildSolverInstance() throw(ErrorClass);
+	
+   	/**
+   	 * use this for debugging, print out the instance that
+   	 * the solver thinks it has and compare this with the OSiL
+   	 * file
+   	 */	
+	void dataEchoCheck();
+	
+	/** 
+	 * m_osilreader is an OSiLReader object used to create an osinstance from an
+	 * osil string if needed	 
+	 */		
+	OSiLReader *m_osilreader;
+
+
 private:
 	OSrLWriter  *osrlwriter;
 
@@ -176,10 +242,12 @@ private:
 	*/
 	//@{
 	//  IpoptSolver();
-	IpoptSolver(const IpoptSolver&);
-	IpoptSolver& operator=(const IpoptSolver&);
+	//IpoptSolver(const IpoptSolver&);
+	//IpoptSolver& operator=(const IpoptSolver&);
 	//@}
+	//std::string ipoptErrorMsg;
 	std::string ipoptErrorMsg;
 };
+
 
 #endif /*IPOPTSOLVER_H*/

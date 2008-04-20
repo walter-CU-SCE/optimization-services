@@ -14,11 +14,12 @@
  */
 %{
 
-#include <iostream>
+
+#include "OSDataStructures.h"
+#include "OSMathUtil.h"
 #include "OSConfig.h"
 
-
-//#define PARSERDEBUG
+#include <iostream>
 
 
 
@@ -71,12 +72,13 @@
 #endif
 
 
+
 #ifdef WIN_
   #define YY_NO_UNISTD_H
   #include <io.h>
   #include <process.h>
   #ifdef USE_OLD_UNISTD
-     #include<sys/unistd.h>  
+     #include<sys/unistd.h>
   #endif
 #endif
 using std::cout;
@@ -99,6 +101,10 @@ using std::ostringstream;
 %x elementtext
 %x comment
 %x xmldeclaration
+
+%{
+#define YY_EXTRA_TYPE OSiLParserData*
+%} 
  
 xmlwhitespace ([ \t\n\r])
 equality ([ \t\n\r])*=([ \t\n\r])*
@@ -112,10 +118,29 @@ adouble (-?((([0-9]+)|([0-9]*\.[0-9]*))([eE][-+]?[0-9]+)?|INF))
  
 {xmlwhitespace}
 
-{quote} {YY_PRINT;  yylval->sval = strdup(yytext); return(QUOTE);}
+ /* General patterns matched in more than one element */
+
+
+{quote} {YY_PRINT;  yylval->sval = yytext; return(QUOTE);}
 ({xmlwhitespace}*{greater_than}) {YY_PRINT; return(GREATERTHAN);}
 {aninteger}  {YY_PRINT; yylval->ival = atoi(yytext); return(INTEGER);}
-{adouble} {YY_PRINT; yylval->dval = atof(yytext); return(DOUBLE);}
+
+{adouble} {YY_PRINT; 
+char *yytextEnd;
+yylval->dval = os_strtod_wrap( yytext, &yytextEnd);
+	if( (unsigned)(yytextEnd - yytext) != strlen( yytext)){
+		std::ostringstream outStr;
+		outStr << "encountered a spurious character in the lexer" << endl;
+		outStr << "The first character is: ";
+		outStr <<  yytext;
+		outStr << endl;
+		outStr << "See line number: " << yylineno << endl;  
+		throw ErrorClass( outStr.str());
+	}
+return(DOUBLE);}
+
+
+
 ({xmlwhitespace}*\/>) {YY_PRINT;  return(ENDOFELEMENT);}
 
 
@@ -131,9 +156,7 @@ adouble (-?((([0-9]+)|([0-9]*\.[0-9]*))([eE][-+]?[0-9]+)?|INF))
 ({xmlwhitespace}+idxTwo{equality}) {YY_PRINT;   return(IDXTWOATT);}
 ({xmlwhitespace}+coef{equality}) {YY_PRINT;   return(COEFATT);}
 ({xmlwhitespace}+value{equality}) {YY_PRINT;  return(VALUEATT);}
-({xmlwhitespace}+mult{equality}) {YY_PRINT; return(MULTATT);}
 ({xmlwhitespace}+startIdx{equality}) {YY_PRINT; return(STARTIDXATT);}
-({xmlwhitespace}+endIdx{equality}) {YY_PRINT; return(ENDIDXATT);}
 ({xmlwhitespace}+horizon{equality}) {YY_PRINT; return(HORIZONATT);}
 ({xmlwhitespace}+start{equality}) {YY_PRINT; return(STARTATT);}
 
@@ -144,7 +167,7 @@ adouble (-?((([0-9]+)|([0-9]*\.[0-9]*))([eE][-+]?[0-9]+)?|INF))
 ({xmlwhitespace}+name{equality}\") {YY_PRINT; BEGIN doublequoteattributetext; return(NAMEATT);}
 ({xmlwhitespace}+name{equality}\') {YY_PRINT; BEGIN singlequoteattributetext; return(NAMEATT);}
 
-
+ /* patterns for <quadraticCoefficients> */
 {xmlwhitespace}*\<\/osil{xmlwhitespace}*\>{xmlwhitespace}* {YY_PRINT; return(OSILEND);}
 {xmlwhitespace}*\<\/instanceData{xmlwhitespace}*\>{xmlwhitespace}* {YY_PRINT; return(INSTANCEDATAEND);}
 {xmlwhitespace}*\<quadraticCoefficients {YY_PRINT; return(QUADRATICCOEFFICIENTSSTART);}
@@ -152,6 +175,7 @@ adouble (-?((([0-9]+)|([0-9]*\.[0-9]*))([eE][-+]?[0-9]+)?|INF))
 {xmlwhitespace}*\<qTerm {YY_PRINT; return(QTERMSTART);}
 {xmlwhitespace}*\<\/qTerm{xmlwhitespace}*\>{xmlwhitespace}* {YY_PRINT; return(QTERMEND);}
 
+ /* patterns for <nonlinearExpressions> */
 {xmlwhitespace}*\<nonlinearExpressions {YY_PRINT;  return(NONLINEAREXPRESSIONSSTART);}
 {xmlwhitespace}*\<\/nonlinearExpressions{xmlwhitespace}*\>{xmlwhitespace}* {YY_PRINT; return(NONLINEAREXPRESSIONSEND);}
 {xmlwhitespace}*\<nl {YY_PRINT; return(NLSTART);}
@@ -204,6 +228,7 @@ adouble (-?((([0-9]+)|([0-9]*\.[0-9]*))([eE][-+]?[0-9]+)?|INF))
 {xmlwhitespace}*\<variable {YY_PRINT;  return(VARIABLESTART);}
 {xmlwhitespace}*\<\/variable{xmlwhitespace}*\>{xmlwhitespace}* {YY_PRINT; return(VARIABLEEND);}
 
+ /* patterns for <timeDomain> element */
 {xmlwhitespace}*\<timeDomain {YY_PRINT; return(TIMEDOMAINSTART);}
 {xmlwhitespace}*\<\/timeDomain{xmlwhitespace}*\>{xmlwhitespace}* {YY_PRINT; return(TIMEDOMAINEND);}
 {xmlwhitespace}*\<stages {YY_PRINT; return(STAGESSTART);}
@@ -237,8 +262,8 @@ adouble (-?((([0-9]+)|([0-9]*\.[0-9]*))([eE][-+]?[0-9]+)?|INF))
  <xmldeclaration>"?>" BEGIN 0;
  
 
-<doublequoteattributetext>[^\"]* {YY_PRINT;  BEGIN 0; yylval->sval = strdup(yytext); return(ATTRIBUTETEXT);}
-<singlequoteattributetext>[^\']* {YY_PRINT;  BEGIN 0; yylval->sval = strdup(yytext); return(ATTRIBUTETEXT);}
+<doublequoteattributetext>[^\"]* {YY_PRINT;  BEGIN 0; /*yylval->sval = strdup(yytext);*/ yylval->sval = yytext; return(ATTRIBUTETEXT);}
+<singlequoteattributetext>[^\']* {YY_PRINT;  BEGIN 0; /*yylval->sval = strdup(yytext);*/ yylval->sval = yytext; return(ATTRIBUTETEXT);}
 
 . {  
 	std::string error;

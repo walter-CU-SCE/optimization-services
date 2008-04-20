@@ -42,8 +42,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-DWIN_ -D_WIN32 -DMSVISUALSTUDIO -DHAVE_MATH_H -DHAVE_STRING_H -DHAVE_STDIO_H -DHAVE_TIME_H"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;..\..\..\..\OS\src\OSUtils;..\..\..\..\OS\src\OSSolverInterfaces;..\..\..\..\OS\src\OSParsers;..\..\..\..\OS\src\OSModelInterfaces;..\..\..\..\OS\src\OSCommonInterfaces;..\..\..\..\OS\src\OSAgent;..\..\..\..\OS\src;..\..\..\..;..\..\..\..\CppAD\local;..\..\..\..\CppAD;..\..\..\..\Osi\src\OsiCbc;..\..\..\..\Osi\src;..\..\..\..\Osi\src\OsiClp;..\..\..\..\CoinUtils\src;..\..\..\..\BuildTools\headers;..\..\..\..\Osi\src\OsiVol;..\..\..\..\Vol\src;..\..\..\..\Clp\src;..\..\..\..\Cbc\src"
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;USE_CBCCONFIG;COIN_NO_CLP_MESSAGE;WIN_;_LINDO_DLL_;OSROOT_DIR"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;..\..\..\..\OS\src\OSUtils;..\..\..\..\OS\src\OSSolverInterfaces;..\..\..\..\OS\src\OSParsers;..\..\..\..\OS\src\OSModelInterfaces;..\..\..\..\OS\src\OSCommonInterfaces;..\..\..\..\OS\src\OSAgent;..\..\..\..\OS\src;..\..\..\..;..\..\..\..\CppAD\local;..\..\..\..\CppAD;..\..\..\..\Osi\src\OsiCbc;..\..\..\..\Osi\src;..\..\..\..\Osi\src\OsiClp;..\..\..\..\CoinUtils\src;..\..\..\..\BuildTools\headers;..\..\..\..\Osi\src\OsiVol;..\..\..\..\Vol\src;..\..\..\..\Clp\src;..\..\..\..\Cbc\src;..\..\..\..\Cgl\src\CglPreProcess;..\..\..\..\Ipopt\src\Common;..\..\..\..\Ipopt\src\LinAlg;..\..\..\..\Ipopt\src\Interfaces;..\..\..\..\Cgl\src"
+				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;USE_CBCCONFIG;COIN_NO_CLP_MESSAGE;WIN_;_LINDO_DLL_;OSROOT_DIR;USE_DTOA"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -116,8 +116,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-DWIN_ -D_WIN32 -DMSVISUALSTUDIO -DHAVE_MATH_H -DHAVE_STRING_H -DHAVE_STDIO_H -DHAVE_TIME_H"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;..\..\..\..\OS\src\OSUtils;..\..\..\..\OS\src\OSSolverInterfaces;..\..\..\..\OS\src\OSParsers;..\..\..\..\OS\src\OSModelInterfaces;..\..\..\..\OS\src\OSCommonInterfaces;..\..\..\..\OS\src\OSAgent;..\..\..\..\OS\src;..\..\..\..;..\..\..\..\CppAD\local;..\..\..\..\CppAD;..\..\..\..\Osi\src\OsiCbc;..\..\..\..\Osi\src;..\..\..\..\Osi\src\OsiClp;..\..\..\..\CoinUtils\src;..\..\..\..\BuildTools\headers;..\..\..\..\Osi\src\OsiVol;..\..\..\..\Vol\src;..\..\..\..\Clp\src;..\..\..\..\Cbc\src"
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;USE_CBCCONFIG;COIN_NO_CLP_MESSAGE;WIN_;_LINDO_DLL_;OSROOT_DIR"
+				AdditionalIncludeDirectories="..\..\..\..\Ipopt\src\LinAlg;..\..\..\..\Ipopt\src\Interfaces;..\..\..\..\Ipopt\src\Common;&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;..\..\..\..\OS\src\OSUtils;..\..\..\..\OS\src\OSSolverInterfaces;..\..\..\..\OS\src\OSParsers;..\..\..\..\OS\src\OSModelInterfaces;..\..\..\..\OS\src\OSCommonInterfaces;..\..\..\..\OS\src\OSAgent;..\..\..\..\OS\src;..\..\..\..;..\..\..\..\CppAD\local;..\..\..\..\CppAD;..\..\..\..\Osi\src\OsiCbc;..\..\..\..\Osi\src;..\..\..\..\Osi\src\OsiClp;..\..\..\..\CoinUtils\src;..\..\..\..\BuildTools\headers;..\..\..\..\Osi\src\OsiVol;..\..\..\..\Vol\src;..\..\..\..\Clp\src;..\..\..\..\Cbc\src;..\..\..\..\Cgl\src\CglPreProcess;..\..\..\..\Cgl\src"
+				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;USE_CBCCONFIG;COIN_NO_CLP_MESSAGE;USE_DTOA;WIN_;_LINDO_DLL_;OSROOT_DIR"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -192,6 +192,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\OSUtils\OSdtoa.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\OSUtils\OSErrorClass.cpp"
 				>
 			</File>
@@ -221,6 +225,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\OSCommonInterfaces\OSInstance.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSSolverInterfaces\OSIpoptSolver.cpp"
 				>
 			</File>
 			<File
@@ -289,6 +297,138 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSBase64.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSSolverInterfaces\OSCoinSolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSCommonUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSConfig.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSDataStructures.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSDefaultSolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSdtoa.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSErrorClass.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSExpressionTree.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSFileUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSAgent\OShL.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSParsers\OSiLParserData.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSiLReader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSiLWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSInstance.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSSolverInterfaces\OSIpoptSolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSSolverInterfaces\OSKnitroSolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSSolverInterfaces\OSLindoSolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSMathUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSModelInterfaces\OSMatlab.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSModelInterfaces\OSmps2osil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSModelInterfaces\OSnl2osil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSnLNode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSParsers\OSOptionsStruc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSUtils\OSParameters.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSParsers\OSParseosil.tab.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSParsers\OSParseosrl.tab.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSResult.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSParsers\OSrLParserData.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSrLReader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSCommonInterfaces\OSrLWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSAgent\OSSolverAgent.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\OSAgent\OSWSUtil.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

@@ -18,6 +18,8 @@
  
 #include "OSDataStructures.h" 
 #include "OSMathUtil.h"
+
+
 #include <iostream>
 
 
@@ -88,6 +90,70 @@ SparseMatrix* MathUtil::convertLinearConstraintCoefficientMatrixToTheOtherMajor(
 	miStart[0] = 0;
 	return matrix;		
 }//convertLinearConstraintCoefficientMatrixToTheOtherMajor
+
+
+double os_strtod_wrap(const char *str,  char **strEnd){
+#ifndef USE_DTOA
+	return strtod(str,  strEnd);	
+#else
+	return os_strtod(str,  strEnd);;
+#endif
+}//end os_strtod_wrap
+
+
+std::string os_dtoa_format(double  x){
+	ostringstream outStr;
+#ifndef USE_DTOA
+	outStr << x;
+	return outStr.str();
+#else
+	outStr << "";
+	char *charResult;
+    int decimalPointPos;
+    int sign;  
+    int strLength = 0;
+    int k = 0;
+    charResult = os_dtoa(x, 0, 0, &decimalPointPos, &sign, NULL);
+    // get the length
+    // get the sign, 1 for negative
+    if( sign == 1) outStr << "-";
+    strLength = strlen( charResult);
+    // return charResult if we have nan or infinity  -- if so, return orginal string
+    if(decimalPointPos == 9999){
+    	for(k = 0; k < strLength; k++)outStr << charResult[ k];
+    	return outStr.str();    	
+    }
+    if(decimalPointPos == strLength){ //don't we have an integer?
+    	for(k = 0; k < strLength; k++)outStr << charResult[ k];
+    	return outStr.str();
+    } 
+    if(decimalPointPos >= 0){
+    	if(decimalPointPos > strLength){
+    		// put in all of the characters from charResult
+    		outStr << charResult[ 0];
+    		outStr <<  ".";
+    		for(k = 1; k < strLength; k++) outStr << charResult[ k];
+    		//for(k = strLength; k < decimalPointPos; k++) outStr <<  "0";
+    		outStr <<  "e";
+    		outStr <<  decimalPointPos -  1;
+    	}else{
+    		for(k = 0; k < decimalPointPos; k++) outStr << charResult[ k];
+    		outStr <<  ".";
+    		for(k = decimalPointPos; k < strLength; k++) outStr << charResult[ k];
+    	}
+    }else{
+		outStr << charResult[ 0];
+		outStr <<  ".";
+    	//for(k = 0; k < -decimalPointPos; k++) outStr << "0";
+    	for(k = 1; k < strLength; k++)outStr <<  charResult[ k];
+		outStr <<  "e";
+		outStr <<  decimalPointPos -1 ;
+    }
+    //
+    os_freedtoa( charResult);
+	return outStr.str();
+#endif
+}// end os_dtoa_format
 
 
 

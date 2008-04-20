@@ -172,7 +172,7 @@ extern "C"
     #endif
     {
         if (g_pTheNlpProblemDefInstance == NULL)
-            g_pTheNlpProblemDefInstance = new KnitroSolver;
+            g_pTheNlpProblemDefInstance = new KnitroProblem(NULL, NULL);
 
         return( g_pTheNlpProblemDefInstance );
     }
@@ -180,40 +180,37 @@ extern "C"
 #endif
 
 
-KnitroSolver::KnitroSolver() {
-	osrlwriter = new OSrLWriter();
-	knitroErrorMsg = "";
+KnitroProblem::KnitroProblem(OSInstance *osinstance_,  OSResult *osresult_ ) {
+
 	_daXInit = NULL;
+	osinstance = osinstance_;
+	osresult = osresult_;
 }
 
-KnitroSolver::~KnitroSolver() {
-	#ifdef DEBUG
-	cout << "inside KnitroSolver destructor" << endl;
-	#endif
-	delete osrlwriter;
-	osrlwriter = NULL;
-	#ifdef DEBUG
-	cout << "leaving KnitroSolver destructor" << endl;
-	#endif
+
+
+KnitroProblem::~KnitroProblem() {
     delete [] _daXInit;
 	_daXInit = NULL;
 } 
+
+
 
 //--------------------------------------------------------------------
 //  Simple access methods
 //--------------------------------------------------------------------
 
-int  KnitroSolver::getN (void){
+int  KnitroProblem::getN (void){
     return( _nN );
 }//getN
 
 
-int  KnitroSolver::getM (void){
+int  KnitroProblem::getM (void){
     return( _nM );
 }//getM
 
 
-void  KnitroSolver::getInitialX (double * const  daX){
+void  KnitroProblem::getInitialX (double * const  daX){
     if (_daXInit == NULL){
         cout << "*** Must call 'loadProblemIntoKnitro' before 'KnitroSolver::getInitialX'\n";
         exit( EXIT_FAILURE );
@@ -231,15 +228,15 @@ void  KnitroSolver::getInitialX (double * const  daX){
 /** Define the fixed problem definition information and pass it to
  *  KNITRO by calling KTR_init_problem.
  */
-bool  KnitroSolver::loadProblemIntoKnitro (KTR_context_ptr  kc){
+bool  KnitroProblem::loadProblemIntoKnitro (KTR_context_ptr  kc){
 	int i;
 	if(osinstance->getObjectiveNumber() <= 0) throw ErrorClass("Knitro NEEDS AN OBJECTIVE FUNCTION");                 	
 	// number of variables
 	_nN = osinstance->getVariableNumber();
 	// number of constraints
 	_nM = osinstance->getConstraintNumber();
-	cout << "number variables  !!!!!!!!!!!!!!!!!!!!!!!!!!!" << _nN << endl;
-	cout << "number constraints  !!!!!!!!!!!!!!!!!!!!!!!!!!!" << _nM << endl;
+	cout << "number variables  !!!!!!!!!!!!!!!!!!!!!!!!!!!"   <<   _nN << endl;
+	cout << "number constraints  !!!!!!!!!!!!!!!!!!!!!!!!!!!" <<   _nM << endl;
 	try{
 		osinstance->initForAlgDiff( );
 	}
@@ -261,7 +258,6 @@ bool  KnitroSolver::loadProblemIntoKnitro (KTR_context_ptr  kc){
 			else _daXLo[i] = mdVarLB[ i]; 
 		if( mdVarUB[ i] == OSDBL_MAX) _daXUp[i] = KTR_INFBOUND;
 			else _daXUp[i] = mdVarUB[ i];  	
-			
 		//cout << "x_l !!!!!!!!!!!!!!!!!!!!!!!!!!!" << x_l[i] << endl;
 		//cout << "x_u !!!!!!!!!!!!!!!!!!!!!!!!!!!" << x_u[i] << endl;
 	}
@@ -271,9 +267,9 @@ bool  KnitroSolver::loadProblemIntoKnitro (KTR_context_ptr  kc){
 	//constraint upper bounds
 	double * mdConUB = osinstance->getConstraintUpperBounds();
 	
-	_naCType  = new int[_nM];
-    _daCLo    = new double[_nM];
-    _daCUp    = new double[_nM];
+	_naCType = new int[ _nM];
+    _daCLo   = new double[ _nM];
+    _daCUp   = new double[ _nM];
     _naCType[0] = KTR_CONTYPE_LINEAR;
 	for(i = 0; i < _nM; i++){
 		if( mdConLB[ i] == -OSDBL_MAX) _daCLo[i] = -KTR_INFBOUND;
@@ -333,8 +329,6 @@ bool  KnitroSolver::loadProblemIntoKnitro (KTR_context_ptr  kc){
 				cout << "COL HESS IDX  !!!!!!!!!!!!!!!!!!!!!!!!!!!"  << _naHessCols[i] << endl;
 		}
 	}  
- 
-
     //---- INITIAL GUESS FOR x AND lambda.
   	// Here, we assume we only have starting values for x, if you code
   	// your own NLP, you can provide starting values for the dual variables
@@ -398,7 +392,7 @@ bool  KnitroSolver::loadProblemIntoKnitro (KTR_context_ptr  kc){
 //--------------------------------------------------------------------
 //  Method:  areDerivativesImplemented
 //--------------------------------------------------------------------
-bool  KnitroSolver::areDerivativesImplemented(const DerivativesImplementedType  nWhichDers){
+bool  KnitroProblem::areDerivativesImplemented(const DerivativesImplementedType  nWhichDers){
      if (nWhichDers == nCAN_COMPUTE_GA)
         return( true );
     if (nWhichDers == nCAN_COMPUTE_H)
@@ -412,7 +406,7 @@ bool  KnitroSolver::areDerivativesImplemented(const DerivativesImplementedType  
 //--------------------------------------------------------------------
 //  Method:  evalFC
 //--------------------------------------------------------------------
-int  KnitroSolver::evalFC (const double * const  daX,
+int  KnitroProblem::evalFC (const double * const  daX,
                          double * const  dObj,
                          double * const  daC,
                          void   *        userParams){
@@ -448,7 +442,7 @@ int  KnitroSolver::evalFC (const double * const  daX,
 //--------------------------------------------------------------------
 //  Method:  evalGA
 //--------------------------------------------------------------------
-int  KnitroSolver::evalGA (const double * const  daX,
+int  KnitroProblem::evalGA (const double * const  daX,
                          double * const  daG,
                          double * const  daJ,
                          void   *        userParams){
@@ -490,7 +484,7 @@ int  KnitroSolver::evalGA (const double * const  daX,
 //--------------------------------------------------------------------
 //  Method:  evalH
 //--------------------------------------------------------------------
-int  KnitroSolver::evalH (const double * const  daX,
+int  KnitroProblem::evalH (const double * const  daX,
                   const double * const  daLambda,
                         double * const  daH,
                         void   *        userParams){
@@ -509,7 +503,7 @@ int  KnitroSolver::evalH (const double * const  daX,
 		daH[ i]  = *(sparseHessian->hessValues + i);
 		std::cout << "Hessian Value = " << daH[ i] << std::endl;
 	}
-
+	delete[] objMultipliers;
     return( 0 );
 }//evalH
 
@@ -517,7 +511,7 @@ int  KnitroSolver::evalH (const double * const  daX,
 //--------------------------------------------------------------------
 //  Method:  evalHV
 //--------------------------------------------------------------------
-int  KnitroSolver::evalHV (const double * const  daX,
+int  KnitroProblem::evalHV (const double * const  daX,
                    const double * const  daLambda,
                          double * const  daHV,
                          void   *        userParams){
@@ -527,17 +521,56 @@ int  KnitroSolver::evalHV (const double * const  daX,
 
 //OS specific default solver methods
 
+
+KnitroSolver::KnitroSolver() {
+	osrlwriter = new OSrLWriter();
+	osresult = new OSResult();
+	knitroErrorMsg = "";
+
+}
+
+
+void KnitroSolver::buildSolverInstance() throw (ErrorClass) {
+	try{
+		
+	}
+	catch(const ErrorClass& eclass){
+		std::cout << "THERE IS AN ERROR" << std::endl;
+		osresult->setGeneralMessage( eclass.errormsg);
+		osresult->setGeneralStatusType( "error");
+		osrl = osrlwriter->writeOSrL( osresult);
+		throw ErrorClass( osrl) ;
+	}				
+}//end buildSolverInstance()
+
+KnitroSolver::~KnitroSolver() {
+	#ifdef DEBUG
+	cout << "inside KnitroSolver destructor" << endl;
+	#endif
+	delete osresult;
+	osresult = NULL;
+	delete osrlwriter;
+	osrlwriter = NULL;
+	//delete osinstance;
+	//osinstance = NULL;
+	#ifdef DEBUG
+	cout << "leaving KnitroSolver destructor" << endl;
+	#endif
+}
+
 void KnitroSolver::solve() throw (ErrorClass) {
 	try{
 		OSiLReader* osilreader = NULL; 
-		osresult = new OSResult();
+		//osresult = new OSResult();
 		if(osil.length() == 0 && osinstance == NULL) throw ErrorClass("there is no instance");
 		clock_t start, finish;
 		double duration;
 		start = clock();
-		if(osinstance == NULL){
+		bool newOSiLReader = false;
+		if( osinstance == NULL){
 			osilreader = new OSiLReader();
 			osinstance = osilreader->readOSiL( osil);
+			newOSiLReader = true;
 		}
 		OSiLWriter osilwriter;
 		//cout << osilwriter.writeOSiL( osinstance) << endl;
@@ -549,11 +582,11 @@ void KnitroSolver::solve() throw (ErrorClass) {
 
 		/***************now the Knitro invokation*********************/
 		// Create a new instance of your nlp 
-		NlpProblemDef *  pOptProb = this;
-		bool             bWantToSolve;
+		NlpProblemDef *pOptProb = new KnitroProblem(osinstance, osresult);
+		bool bWantToSolve;
 
 		//---- OPEN A NEW INSTANCE OF KNITRO.
-		KTR_context_ptr  kc;
+		KTR_context  *kc;
 		kc = KTR_new();
 		if (kc == NULL){
 			cout << "*** KTR_new failed, maybe a license issue?\n";
@@ -562,9 +595,8 @@ void KnitroSolver::solve() throw (ErrorClass) {
 
 		//---- APPLY ANY USER OPTIONS (PROCEED EVEN IF THERE IS AN ERROR).
 		KTR_load_param_file (kc, "knitro.opt");
-
 		//---- LOAD THE PROBLEM INTO KNITRO.
-		if (pOptProb->loadProblemIntoKnitro (kc) == false){
+		if (pOptProb->loadProblemIntoKnitro ( kc) == false){
 			cout << "*** loadProblemIntoKnitro failed\n";
 			exit( EXIT_FAILURE );
         }
@@ -595,6 +627,7 @@ void KnitroSolver::solve() throw (ErrorClass) {
 		//---- ALLOCATE ARRAYS
 		double *  daX      = new double[pOptProb->getN()];
 		double *  daLambda = new double[pOptProb->getM() + pOptProb->getN()];
+		double* mdObjValues = new double[1];
 		bWantToSolve = true;
 		if (bWantToSolve == true){
 			//---- CALL KNITRO AND SOLVE.
@@ -607,7 +640,7 @@ void KnitroSolver::solve() throw (ErrorClass) {
 
 			//construct osresult
 			int solIdx = 0;
-			double* mdObjValues = new double[1];
+			
 			std::string message = "Knitro solver finishes to the end.";
 			std::string solutionDescription = "";	
 
@@ -732,13 +765,18 @@ void KnitroSolver::solve() throw (ErrorClass) {
 								0, 0.0, NULL, NULL, NULL, NULL);
 		}
 		
-
+		if(newOSiLReader == true){
+			delete osilreader;
+			osilreader = NULL;
+		}
 		delete [] daX;
 		delete [] daLambda;
+		delete [] mdObjValues;
 
-		KTR_free (&kc);
-
-		//delete pOptProb;
+		KTR_free( &kc);
+		delete pOptProb;
+		
+		
 		//return( EXIT_SUCCESS );	//to do
 	}
 	catch(const ErrorClass& eclass){
@@ -815,7 +853,7 @@ NlpProblemDef::~NlpProblemDef (void)
 {
     //---- DO NOTHING.
    //return;
-   }
+  }
 
                                
 

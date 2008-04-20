@@ -21,7 +21,7 @@ ADDLIBS =
 
 
 # CHANGEME: Additional flags for compilation (e.g., include flags)
-ADDINCFLAGS =  
+ADDINCFLAGS =  -I${prefix}/include
 
 # CHANGEME: SRCDIR and VPATH should be the path to the source code. It is assumed
 # that the lib directory is in prefix/lib and the header files are in
@@ -76,6 +76,7 @@ LIBS += @osicbclib@
 LIBS += @osiclplib@ 
 @COIN_HAS_DYLP_TRUE@LIBS += @osidylplib@
 @COIN_HAS_VOL_TRUE@LIBS += @osivollib@ 
+@COIN_HAS_GLPK_TRUE@LIBS += @osiglpklib@ 
 LIBS += @cbclib@
 @COIN_HAS_SYMPHONY_TRUE@LIBS += @symphonylib@
 LIBS += @cgllib@
@@ -86,11 +87,16 @@ LIBS += @clplib@
 #
 #ADDITIONAL IPOPT LIBS
 #ADDIPOPTLIBS = $(shell cat $(OSLIBDIR)/ipopt_addlibs_cpp.txt)
-ADDIPOPTLIBS = `cat $(prefix)/lib/ipopt_addlibs_cpp.txt`
+ADDIPOPTLIBS = `cat $(prefix)/share/doc/coin/Ipopt/ipopt_addlibs_cpp.txt`
 @COIN_HAS_IPOPT_TRUE@LIBS += @ipoptlib@ $(ADDIPOPTLIBS)
+
+
+@COIN_HAS_ASL_TRUE@LIBS += @ASLLIB@
+
+
 LIBS += @coinutilslib@ 
 
-#@COIN_HAS_ASL_TRUE@LIBS += @ASLLIB@
+
  
 #DONE ADDING LIBS
 

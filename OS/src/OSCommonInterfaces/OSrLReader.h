@@ -15,12 +15,17 @@
  */
  
  
-#ifndef OSRLREADER_H
-#define OSRLREADER_H
-
+#ifndef _OSRLREADER_H
+#define _OSRLREADER_H
 
 
 #include "OSResult.h"
+#include "OSrLParserData.h"
+#include "OSErrorClass.h"
+
+
+#include <string>
+
 
 /*! \class OSrLReader
  *  \brief The OSrLReader Class.
@@ -57,6 +62,17 @@ public:
 	 * @param osrl an OSrL string. 
 	 * @return the OSResult object corresponding to the OSrL string. 
 	 */		
-	OSResult *readOSrL(std::string osrl);
+	OSResult *readOSrL(const std::string& posrl) throw(ErrorClass);
+	
+private:
+	/** m_osreslut is the OSResult object returned by 
+	 * the OSrLReader
+	 */
+	OSResult *m_osresult;
+	
+	/** m_parerData is the  object used in the parser to 
+	 * temporarily store data 
+	 */
+	OSrLParserData *m_parserData;
 };
 #endif

@@ -51,6 +51,25 @@
 # endif
 #endif
 
+#ifdef HAVE_CSTRING
+# include <cstring>
+#else
+# ifdef HAVE_STRING_H
+#  include <string.h>
+# else
+#  error "don't have header file for string"
+# endif
+#endif
+
+
+#ifdef HAVE_CSTDLIB
+# include <cstdlib>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+
 
 //#include <limits.h>
 //#ifdef INFINITY //This is the definition in the ISO C99 standard.
@@ -63,7 +82,11 @@
 
 #define OS_E_VALUE exp(1.0)
 #define OS_PI_VALUE 2*asin(1.0)
-
+/**
+ * we use OS_NEAR_EQUAL in unitTest to see if we 
+ * are close to the optimal obj value
+ */
+#define OS_NEAR_EQUAL 1e-2
 
 #ifdef NAN 
 	#define OSNAN NAN

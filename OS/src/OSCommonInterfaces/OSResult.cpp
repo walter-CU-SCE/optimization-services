@@ -19,6 +19,7 @@
 #include "OSErrorClass.h"
 #include<iostream>
 #include<sstream>
+//#define DEBUG
 
 using namespace std;
 
@@ -59,14 +60,14 @@ OSResult::~OSResult(){
 	#endif
 	// delete the two children of OSResult
 	// delete resultHeader object
-	delete resultHeader;
+	if(resultHeader != NULL) delete resultHeader;
 	resultHeader = NULL;
 	//delete resultData object
-	delete resultData;
+	if(resultData != NULL)  delete resultData;
 	resultData = NULL;
-	delete[] m_mdPrimalValues;
+	if(m_mdPrimalValues != NULL) delete[] m_mdPrimalValues;
 	m_mdPrimalValues = 0;
-	delete[] m_mdDualValues;
+	if(m_mdDualValues != NULL) delete[] m_mdDualValues;
 	m_mdDualValues = 0;
 }//end OSResult destructor
 
@@ -826,6 +827,7 @@ bool OSResult::setSolutionNumber(int number){
 	for(int i = 0; i < number; i++){
 		std::cout << "CREATING A NEW OPTIMIZATION SOLUTION" << std::endl;
 		resultData->optimization->solution[i] = new OptimizationSolution();
+		std::cout << "DONE CREATING A NEW OPTIMIZATION SOLUTION" << std::endl;
 	}
 	return true;
 }//setSolutionNumber

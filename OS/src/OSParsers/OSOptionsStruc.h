@@ -89,7 +89,7 @@ struct osOptionsStruc{
 	 * solve, send, getJobID, kill, knock, or retrieve
 	 */
 	std::string serviceMethod;
-	
+	 
 	/** name of an input file with xml in OS Process language format,
 	 * used for example to knock on a server, for example
 	 * -osplInput ../data/osplFiles/demo.ospl
@@ -120,7 +120,7 @@ struct osOptionsStruc{
 	std::string mpsFile;
 	
 	/** the name of the nlFile that holds an instance in AMPL nl format */
-	std::string nlFile;
+	std::string nlFile;  
 	
 	/** the name of the solver to be invoked, 
 	 * e.g -solver Ipopt
@@ -134,6 +134,16 @@ struct osOptionsStruc{
 	 * -browser /Applications/Firefox.app/Contents/MacOS/firefox
 	 */
 	std::string browser;
+
+	/** if this parameter is true we print the contents of the file
+	 * help.txt and return 
+	 */
+	bool invokeHelp;
+	
+	/** if this parameter is true we print the current version
+	 * of the OS project 
+	 */
+	bool writeVersion;
 	
 };
 

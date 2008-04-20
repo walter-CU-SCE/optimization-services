@@ -18,8 +18,8 @@
 
 
 #include "OSIpoptSolver.h"
-#include "IpIpoptApplication.hpp"
 #include "OSCommonUtil.h"
+
 
 using std::cout; 
 using std::endl; 
@@ -29,22 +29,31 @@ using namespace Ipopt;
 
 IpoptSolver::IpoptSolver() {
 	osrlwriter = new OSrLWriter();
+	osresult = new OSResult();
+	m_osilreader = NULL;
 	ipoptErrorMsg = "";
-}
+
+} 
 
 IpoptSolver::~IpoptSolver() {
 	#ifdef DEBUG
 	cout << "inside IpoptSolver destructor" << endl;
 	#endif
+	if(m_osilreader != NULL) delete m_osilreader;
+	m_osilreader = NULL;
+	delete osresult;
+	osresult = NULL;
 	delete osrlwriter;
 	osrlwriter = NULL;
+	//delete osinstance;
+	//osinstance = NULL;
 	#ifdef DEBUG
 	cout << "leaving IpoptSolver destructor" << endl;
 	#endif
 }
 
 // returns the size of the problem
-bool IpoptSolver::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
+bool IpoptProblem::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
                              Index& nnz_h_lag, IndexStyleEnum& index_style)
 {
 	if(osinstance->getObjectiveNumber() <= 0) throw ErrorClass("Ipopt NEEDS AN OBJECTIVE FUNCTION");                 	
@@ -63,7 +72,7 @@ bool IpoptSolver::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
 	}	
 	// use the OS Expression tree for function evaluations instead of CppAD
 	osinstance->bUseExpTreeForFunEval = true;
-	std::cout << "Call sparse jacobian" << std::endl;
+	//std::cout << "Call sparse jacobian" << std::endl;
 	SparseJacobianMatrix *sparseJacobian = NULL;
 	try{
 		sparseJacobian = osinstance->getJacobianSparsityPattern();
@@ -72,9 +81,9 @@ bool IpoptSolver::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
 		ipoptErrorMsg = eclass.errormsg;
 		throw;  
 	}
-	std::cout << "Done calling sparse jacobian" << std::endl;
+	//std::cout << "Done calling sparse jacobian" << std::endl;
 	nnz_jac_g = sparseJacobian->valueSize;
-	//cout << "nnz_jac_g  !!!!!!!!!!!!!!!!!!!!!!!!!!!" << nnz_jac_g << endl;	
+	cout << "nnz_jac_g  !!!!!!!!!!!!!!!!!!!!!!!!!!!" << nnz_jac_g << endl;	
 	// nonzeros in upper hessian
 	
 	if( (osinstance->getNumberOfNonlinearExpressions() == 0) && (osinstance->getNumberOfQuadraticTerms() == 0) ) {
@@ -82,12 +91,12 @@ bool IpoptSolver::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
 		nnz_h_lag = 0;
 	}
 	else{
-		std::cout << "Get Lagrangain Hessian Sparsity Pattern " << std::endl;
+		//std::cout << "Get Lagrangain Hessian Sparsity Pattern " << std::endl;
 		SparseHessianMatrix *sparseHessian = osinstance->getLagrangianHessianSparsityPattern();
-		std::cout << "Done Getting Lagrangain Hessian Sparsity Pattern " << std::endl;
+		//std::cout << "Done Getting Lagrangain Hessian Sparsity Pattern " << std::endl;
 		nnz_h_lag = sparseHessian->hessDimension;
 	}
-	//cout << "nnz_h_lag  !!!!!!!!!!!!!!!!!!!!!!!!!!!" << nnz_h_lag << endl;	
+	cout << "nnz_h_lag  !!!!!!!!!!!!!!!!!!!!!!!!!!!" << nnz_h_lag << endl;	
 	// use the C style indexing (0-based)
 	index_style = TNLP::C_STYLE;
   
@@ -97,11 +106,11 @@ bool IpoptSolver::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
 }//get_nlp_info
 
 
-bool IpoptSolver::get_bounds_info(Index n, Number* x_l, Number* x_u,
+bool  IpoptProblem::get_bounds_info(Index n, Number* x_l, Number* x_u,
                                 Index m, Number* g_l, Number* g_u){
  	int i; 
 	double * mdVarLB = osinstance->getVariableLowerBounds();
-	std::cout << "GET BOUNDS INFORMATION FOR IPOPT !!!!!!!!!!!!!!!!!" << std::endl;
+	//std::cout << "GET BOUNDS INFORMATION FOR IPOPT !!!!!!!!!!!!!!!!!" << std::endl;
 	// variables upper bounds
 	double * mdVarUB = osinstance->getVariableUpperBounds();
 
@@ -132,7 +141,7 @@ bool IpoptSolver::get_bounds_info(Index n, Number* x_l, Number* x_u,
 
 
 // returns the initial point for the problem
-bool IpoptSolver::get_starting_point(Index n, bool init_x, Number* x,
+bool IpoptProblem::get_starting_point(Index n, bool init_x, Number* x,
      bool init_z, Number* z_L, Number* z_U, Index m, bool init_lambda,
      Number* lambda) {
   	// Here, we assume we only have starting values for x, if you code
@@ -164,7 +173,7 @@ bool IpoptSolver::get_starting_point(Index n, bool init_x, Number* x,
 }//get_starting_point
 
 // returns the value of the objective function
-bool IpoptSolver::eval_f(Index n, const Number* x, bool new_x, Number& obj_value){
+bool IpoptProblem::eval_f(Index n, const Number* x, bool new_x, Number& obj_value){
 	try{
 		obj_value  = osinstance->calculateAllObjectiveFunctionValues( const_cast<double*>(x), NULL, NULL, new_x, 0 )[ 0];
 	}
@@ -176,7 +185,7 @@ bool IpoptSolver::eval_f(Index n, const Number* x, bool new_x, Number& obj_value
   	return true;
 }
 
-bool IpoptSolver::eval_grad_f(Index n, const Number* x, bool new_x, Number* grad_f){
+bool IpoptProblem::eval_grad_f(Index n, const Number* x, bool new_x, Number* grad_f){
  	int i;
  	double *objGrad;
 	try{
@@ -194,7 +203,7 @@ bool IpoptSolver::eval_grad_f(Index n, const Number* x, bool new_x, Number* grad
 }//eval_grad_f
 
 // return the value of the constraints: g(x)
-bool IpoptSolver::eval_g(Index n, const Number* x, bool new_x, Index m, Number* g) {
+bool IpoptProblem::eval_g(Index n, const Number* x, bool new_x, Index m, Number* g) {
 	try{
  		double *conVals = osinstance->calculateAllConstraintFunctionValues( const_cast<double*>(x), NULL, NULL, new_x, 0 );
  		int i;
@@ -212,15 +221,15 @@ bool IpoptSolver::eval_g(Index n, const Number* x, bool new_x, Index m, Number* 
 
 
 // return the structure or values of the jacobian
-bool IpoptSolver::eval_jac_g(Index n, const Number* x, bool new_x,
+bool IpoptProblem::eval_jac_g(Index n, const Number* x, bool new_x,
                            Index m, Index nele_jac, Index* iRow, Index *jCol,
                            Number* values){
   	SparseJacobianMatrix *sparseJacobian;
 	if (values == NULL) {
 		// return the values of the jacobian of the constraints
-		cout << "n: " << n << endl;
-		cout << "m: " << m << endl;
-		cout << "nele_jac: " <<  nele_jac << endl;
+		//cout << "n: " << n << endl;
+		//cout << "m: " << m << endl;
+		//cout << "nele_jac: " <<  nele_jac << endl;
 		// return the structure of the jacobian
 		try{
 			sparseJacobian = osinstance->getJacobianSparsityPattern();
@@ -262,7 +271,7 @@ bool IpoptSolver::eval_jac_g(Index n, const Number* x, bool new_x,
 }//eval_jac_g
 
 //return the structure or values of the hessian
-bool IpoptSolver::eval_h(Index n, const Number* x, bool new_x,
+bool IpoptProblem::eval_h(Index n, const Number* x, bool new_x,
                        Number obj_factor, Index m, const Number* lambda,
                        bool new_lambda, Index nele_hess, Index* iRow,
                        Index* jCol, Number* values){
@@ -281,7 +290,7 @@ bool IpoptSolver::eval_h(Index n, const Number* x, bool new_x,
 			ipoptErrorMsg = eclass.errormsg;
 			throw;  
 		}
-		cout << "got structure of HESSIAN !!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
+		//cout << "got structure of HESSIAN !!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
 		for(i = 0; i < nele_hess; i++){
 			iRow[i] = *(sparseHessian->hessColIdx + i);
 			jCol[i] = *(sparseHessian->hessRowIdx + i);
@@ -296,9 +305,11 @@ bool IpoptSolver::eval_h(Index n, const Number* x, bool new_x,
 		objMultipliers[0] = obj_factor;
 		try{
 			sparseHessian = osinstance->calculateLagrangianHessian( const_cast<double*>(x), objMultipliers, (double*)lambda ,  new_x, 2);
+		delete[]  objMultipliers;
 		}
 		catch(const ErrorClass& eclass){
 			ipoptErrorMsg = eclass.errormsg;
+			delete[]  objMultipliers;
 			throw;  
 		}
 		for(i = 0; i < nele_hess; i++){
@@ -309,7 +320,7 @@ bool IpoptSolver::eval_h(Index n, const Number* x, bool new_x,
   	return true;
 }//eval_h
 
-bool IpoptSolver::get_scaling_parameters(Number& obj_scaling,
+bool IpoptProblem::get_scaling_parameters(Number& obj_scaling,
                  	bool& use_x_scaling, Index n,
                    	Number* x_scaling,
                     bool& use_g_scaling, Index m,
@@ -323,7 +334,7 @@ bool IpoptSolver::get_scaling_parameters(Number& obj_scaling,
 	return true;
 }//get_scaling_parameters
 
-void IpoptSolver::finalize_solution(SolverReturn status,
+void IpoptProblem::finalize_solution(SolverReturn status,
                                Index n, const Number* x, const Number* z_L, const Number* z_U,
                                   Index m, const Number* g, const Number* lambda,
                                   Number obj_value,
@@ -333,6 +344,9 @@ void IpoptSolver::finalize_solution(SolverReturn status,
 	  // here is where we would store the solution to variables, or write to a file, etc
 	  // so we could use the solution.
 	  // For this example, we write the solution to the console
+	OSrLWriter *osrlwriter ;
+	osrlwriter = new OSrLWriter();
+#ifdef DEBUG
 	  printf("\n\nSolution of the primal variables, x\n");
 	  for (Index i=0; i<n; i++) {
 	    printf("x[%d] = %e\n", i, x[i]);
@@ -345,7 +359,7 @@ void IpoptSolver::finalize_solution(SolverReturn status,
 	  for (Index i=0; i<n; i++) {
 	    printf("z_U[%d] = %e\n", i, z_U[i]);
 	  }
-	
+#endif
 	  printf("\n\nObjective value\n");
 	  printf("f(x*) = %e\n", obj_value);
   	int solIdx = 0;
@@ -383,6 +397,7 @@ void IpoptSolver::finalize_solution(SolverReturn status,
 				solutionDescription = "SUCCESS[IPOPT]: Algorithm terminated successfully at a locally optimal point, satisfying the convergence tolerances.";
 				osresult->setSolutionStatus(solIdx,  "locallyOptimal", solutionDescription);
 				osresult->setPrimalVariableValues(solIdx, const_cast<double*>(x));
+				osresult->setDualVariableValues(solIdx, const_cast<double*>( lambda));
 				mdObjValues[0] = obj_value;
 				osresult->setObjectiveValues(solIdx, mdObjValues);
 			break;
@@ -390,20 +405,23 @@ void IpoptSolver::finalize_solution(SolverReturn status,
 				solutionDescription = "MAXITER_EXCEEDED[IPOPT]: Maximum number of iterations exceeded.";
 				osresult->setSolutionStatus(solIdx,  "stoppedByLimit", solutionDescription);
 				osresult->setPrimalVariableValues(solIdx, const_cast<double*>(x));
+				osresult->setDualVariableValues(solIdx, const_cast<double*>( lambda));
 				mdObjValues[0] = obj_value;
 				osresult->setObjectiveValues(solIdx, mdObjValues);
 			break;
 			case STOP_AT_TINY_STEP:
 				solutionDescription = "STOP_AT_TINY_STEP[IPOPT]: Algorithm proceeds with very little progress.";
 				osresult->setSolutionStatus(solIdx,  "stoppedByLimit", solutionDescription);
-				osresult->setPrimalVariableValues(solIdx, const_cast<double*>(x));
+				osresult->setPrimalVariableValues(solIdx, const_cast<double*>( x));
+				osresult->setDualVariableValues(solIdx, const_cast<double*>( lambda));
 				mdObjValues[0] = obj_value;
 				osresult->setObjectiveValues(solIdx, mdObjValues);
 			break;
 			case STOP_AT_ACCEPTABLE_POINT:
 				solutionDescription = "STOP_AT_ACCEPTABLE_POINT[IPOPT]: Algorithm stopped at a point that was converged, not to _desired_ tolerances, but to _acceptable_ tolerances";
-				osresult->setSolutionStatus(solIdx,  "locallyOptimal", solutionDescription);
+				osresult->setSolutionStatus(solIdx,  "IpoptAccetable", solutionDescription);
 				osresult->setPrimalVariableValues(solIdx, const_cast<double*>(x));
+				osresult->setDualVariableValues(solIdx, const_cast<double*>( lambda));
 				mdObjValues[0] = obj_value;
 				osresult->setObjectiveValues(solIdx, mdObjValues);
 			break;
@@ -439,55 +457,67 @@ void IpoptSolver::finalize_solution(SolverReturn status,
 				solutionDescription = "OTHER[IPOPT]: other unknown solution status from Ipopt solver";
 				osresult->setSolutionStatus(solIdx,  "other", solutionDescription);
 		}
-
 		osresult->setGeneralStatusType("success");
-		osrl = osrlwriter->writeOSrL( osresult);
+		delete osrlwriter;
+		delete[] mdObjValues;
+		osrlwriter = NULL;
 
 	}
 	catch(const ErrorClass& eclass){
 		osresult->setGeneralMessage( eclass.errormsg);
 		osresult->setGeneralStatusType( "error");
-		osrl = osrlwriter->writeOSrL( osresult);
-		throw ;
+		std::string osrl = osrlwriter->writeOSrL( osresult);
+		delete osrlwriter;
+		osrlwriter = NULL;
+		throw ErrorClass(  osrl) ;
+		delete[] mdObjValues;
+		mdObjValues = NULL;
 	}
 //////////
 }
 
 
+void IpoptSolver::buildSolverInstance() throw (ErrorClass) {
+	try{
+		
+		if(osil.length() == 0 && osinstance == NULL) throw ErrorClass("there is no instance");
+		if(osinstance == NULL){
+			m_osilreader = new OSiLReader();
+			osinstance = m_osilreader->readOSiL( osil);
+		}
+		// Create a new instance of your nlp 
+		nlp = new IpoptProblem( osinstance, osresult);
+		app = new IpoptApplication();
+		this->bCallbuildSolverInstance = true;
+	}
+	catch(const ErrorClass& eclass){
+		std::cout << "THERE IS AN ERROR" << std::endl;
+		osresult->setGeneralMessage( eclass.errormsg);
+		osresult->setGeneralStatusType( "error");
+		osrl = osrlwriter->writeOSrL( osresult);
+		throw ErrorClass( osrl) ;
+	}				
+}//end buildSolverInstance() 
+
+
 //void IpoptSolver::solve() throw (ErrorClass) {
 void IpoptSolver::solve() throw (ErrorClass) {
+	if( this->bCallbuildSolverInstance == false) buildSolverInstance();
 	try{
-		OSiLReader* osilreader = NULL; 
-		osresult = new OSResult();
-		if(osil.length() == 0 && osinstance == NULL) throw ErrorClass("there is no instance");
 		clock_t start, finish;
 		double duration;
 		start = clock();
-		if(osinstance == NULL){
-			osilreader = new OSiLReader();
-			osinstance = osilreader->readOSiL( osil);
-		}
-		OSiLWriter osilwriter;
+		//OSiLWriter osilwriter;
 		//cout << osilwriter.writeOSiL( osinstance) << endl;
 		if(osinstance->getVariableNumber() <= 0)throw ErrorClass("Ipopt requires decision variables");
 		finish = clock();
 		duration = (double) (finish - start) / CLOCKS_PER_SEC;
 		cout << "Parsing took (seconds): "<< duration << endl;
 		//dataEchoCheck();
-
 		/***************now the ipopt invokation*********************/
-		// Create a new instance of your nlp 
-		
-		
-		SmartPtr<TNLP> nlp = this;
-
-		// Create a new instance of IpoptApplication
-		//  (use a SmartPtr, not raw)
-		SmartPtr<IpoptApplication> app = new IpoptApplication();
-		// Change some options
-		// Note: The following choices are only examples, they might not be
-		//       suitable for your optimization problem.
 		app->Options()->SetNumericValue("tol", 1e-9);
+		app->Options()->SetIntegerValue("print_level", 0);
+		app->Options()->SetIntegerValue("max_iter", 20000);
 		app->Options()->SetStringValue("mu_strategy", "adaptive");
 		app->Options()->SetStringValue("output_file", "ipopt.out");
 		app->Options()->SetStringValue("check_derivatives_for_naninf", "yes");
@@ -503,15 +533,17 @@ void IpoptSolver::solve() throw (ErrorClass) {
 		std::cout << "Call Ipopt Initialize" << std::endl;
 		app->Initialize();
 		std::cout << "Finished Ipopt Initialize" << std::endl;
+		//nlp->osinstance = this->osinstance;
 		// Ask Ipopt to solve the problem
 		std::cout << "Call Ipopt Optimize" << std::endl;
-		ApplicationReturnStatus status = app->OptimizeTNLP(nlp);
+		ApplicationReturnStatus status = app->OptimizeTNLP( nlp);
 		std::cout << "Finish Ipopt Optimize" << std::endl;
-		if (status != Solve_Succeeded) {
+		osrl = osrlwriter->writeOSrL( osresult);
+		std::cout << "Finish writing the osrl" << std::endl;
+		//if (status != Solve_Succeeded) {
+		if (status < -2) {
 			throw ErrorClass("Ipopt FAILED TO SOLVE THE PROBLEM: " + ipoptErrorMsg);
-		}		
-		delete osilreader;
-		osilreader = NULL;
+		}	
 	}
 	catch(const ErrorClass& eclass){
 		osresult->setGeneralMessage( eclass.errormsg);
@@ -583,6 +615,14 @@ void IpoptSolver::dataEchoCheck(){
 } // end dataEchoCheck
 
 
+IpoptProblem::IpoptProblem(OSInstance *osinstance_,  OSResult *osresult_) {
+	osinstance = osinstance_;
+	osresult = osresult_;
+}
+
+IpoptProblem::~IpoptProblem() {
+
+}
 
 
 

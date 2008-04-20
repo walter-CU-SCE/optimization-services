@@ -30,10 +30,13 @@ AC_CONFIG_SRCDIR(src/OSUtils/OSErrorClass.cpp)
 # /usr/local.
 AC_PREFIX_DEFAULT([`pwd`])
 
+
+
+
+
 #############################################################################
 #                         Standard build tool stuff                         #
 #############################################################################
-
 # Get the system type
 AC_CANONICAL_BUILD
 
@@ -41,7 +44,7 @@ AC_CANONICAL_BUILD
 AC_COIN_PROJECTDIR_INIT
 
 LIBS_without_ADDLIBS="$LIBS"
-
+  
 # Check if user wants to produce debugging code
 AC_COIN_DEBUG_COMPILE(OS)
 
@@ -60,6 +63,34 @@ fi
 
 # Initialize automake and libtool
 AC_COIN_INIT_AUTO_TOOLS
+
+# And determine whether we're big-endian or little-endian. This is necessary to
+# define the correct patterns for IEEE infinity and quiet_nan, in the event
+# that we can't get them any other way. This will define WORDS_BIGENDIAN if
+# we're on a big-endian machine, and do nothing otherwise. Also necessary for
+# the David Gay dtoa
+
+AC_C_BIGENDIAN
+
+# We also need to worry about long long 
+# if -pedantic used for OSdtoa then we crash without
+# the following was added to autoconf 2.60 -- put in when build tools switches over
+# this will define HAVE_LONG_LONG_INT
+#AC_TYPE_LONG_LONG_INT 
+#for now assume C++
+#AC_DEFINE([SIZEOF_LONG_LONG],[0],[in C++ make sure SIZEOF_LONG_LONG is less than 8])
+#KIPP deal with the above
+
+AC_LANG_PUSH( C++)
+
+
+
+# the following does not work for cached variables
+#AC_CHECK_SIZEOF( long long)
+AC_CHECK_SIZEOF( int)
+AC_CHECK_SIZEOF( double)
+AC_CHECK_SIZEOF( long)
+
 
 #############################################################################
 #                              COIN components                              #
@@ -163,6 +194,18 @@ if test $coin_has_dylp != unavailable &&
    test $coin_has_dylp != skipping; then
   case $CXX in
     cl*)
+       osiglpklib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiGlpk.lib';;
+     *)
+       osiglpklib="-L\$(INSTALLIBDIR) -lOsiGlpk";;
+  esac
+  AC_SUBST(osiglpklib) 
+fi
+
+
+if test $coin_has_dylp != unavailable &&
+   test $coin_has_dylp != skipping; then
+  case $CXX in
+    cl*)
        dylplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libDylp.lib'
        osidylplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiDylp.lib';;
      *)
@@ -179,7 +222,7 @@ if test $coin_has_vol != unavailable &&
   case $CXX in
     cl*)
        vollib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libVol.lib'
-       osivollib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libVol.lib';;
+       osivollib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiVol.lib';;
      *)
        vollib="-L\$(INSTALLIBDIR) -lVol"
        osivollib="-L\$(INSTALLIBDIR) -lOsiVol";;
@@ -187,6 +230,8 @@ if test $coin_has_vol != unavailable &&
   AC_SUBST(vollib)
   AC_SUBST(osivollib)  
 fi
+
+
 
 
 if test $coin_has_symphony != unavailable &&
@@ -214,6 +259,11 @@ if test $coin_has_ipopt != unavailable &&
   AC_SUBST(ipoptlib)  
 fi
 
+
+
+
+
+
 #############################################################################
 #                             Third party solvers                           #
 #############################################################################
@@ -230,6 +280,7 @@ AC_COIN_HAS_ASL
 #                         OS-specific configuration                         #
 #############################################################################
 
+
   case $build in
      *-mingw*)
          AC_DEFINE([WIN_],[1],[use if OS is Windows]) ;;
@@ -241,7 +292,7 @@ AC_COIN_HAS_ASL
 		     *)
 		     AC_MSG_WARN("DONT HAVE GCC COMPILER WITH GYGWIN");;   
 		  esac   
-		  AC_DEFINE([NOMINMAX],[1],[use if OS is Cygwin]) ;;     
+		  AC_DEFINE([NOMINMAX],[1],[use if OS is Cygwin]);;
        *-win*)
          AC_DEFINE([WIN_],[1],[use if OS is Windows]) ;;
     *-linux-*)
@@ -259,6 +310,60 @@ AC_COIN_HAS_ASL
 	 ;;
   esac
 
+##############################################################################
+#                            OPENMP defs                                     #
+##############################################################################
+
+
+AC_ARG_ENABLE([openmp],
+[AC_HELP_STRING([--enable-openmp],
+                [compile in OpenMP features])],
+[case "${enableval}" in
+   yes) os_openmp=true
+   ;;
+   no)  os_openmp=false
+   ;;
+   *) AC_MSG_ERROR(Bad value ${enableval} for --enable-openmp)
+   ;;
+esac],
+[os_openmp=false])
+
+if test $os_openmp = true; then
+   AC_MSG_CHECKING([G++ version])
+   fopenmp_version=4.2
+   gcc_required_version=`echo ${fopenmp_version} | sed -e 's/\./0/g'`
+   get_gcc_version=`$CXX -dumpversion`
+   gcc_version=`echo ${get_gcc_version} | sed -e 's/\./0/g'`
+   major_gcc_version=`echo ${gcc_version:0:3}`
+   AC_MSG_RESULT([$get_gcc_version])
+   if test ${major_gcc_version} -lt ${gcc_required_version}; then
+       AC_MSG_ERROR(OpenMP feautures are supported by G++ 4.2.0 or higher.)
+   fi
+fi
+
+AM_CONDITIONAL(OPENMP, [test $os_openmp = true])
+
+
+###########################################################################
+# check to see if we turn off dtoa
+###########################################################################
+ 	
+
+AC_ARG_ENABLE([nodtoa],
+[AC_HELP_STRING([--enable-nodtoa],
+                [do not use dtoa use the C and C++ for string to decimal and back])],
+[case "${enableval}" in
+  yes) nodtoa=true ;;
+  no)  nodtoa=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-nodtoa) ;;
+esac],[nodtoa=false])
+
+if test $nodtoa = false; then
+   AC_DEFINE([USE_DTOA],[1],[use to get lossless IO])
+fi
+
+#the above make the below unnecessary
+#AM_CONDITIONAL(USE_DTOA, test x$nodtoa = xfalse)
 
 
 ############################################################################
@@ -432,8 +537,14 @@ AC_DEFINE_UNQUOTED([OSROOT_DIR], ["$OSROOT_DIR"],
 case $CXX in
   cl*)
     oslib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOS.lib';;
+  g++* | *\g++* | */g++*)
+     if test $os_openmp = true; then
+         CXXFLAGS="$CXXFLAGS -fopenmp"
+     fi
+     oslib="-L\$(INSTALLIBDIR) -lOS"
+  ;;
   *)
-    oslib="-L\$(INSTALLIBDIR) -lOS";;
+   ;;
 esac
 AC_SUBST(oslib)
 
@@ -444,6 +555,13 @@ AC_SUBST(oslib)
 
 # In case this is a VPATH configuration we need to make sure that the
 # input files for the examples are available in the VPATH directory.
+
+
+##
+## the help file
+##
+AC_COIN_VPATH_LINK(src/help.txt)
+
 ##
 ## osil test files
 ##
@@ -454,9 +572,11 @@ AC_COIN_VPATH_LINK(data/osilFiles/HS071_NLP.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/HS071_NLPMod.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/rosenbrockmod.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/avion2.osil)
+AC_COIN_VPATH_LINK(data/osilFiles/gamstrnsport.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/lindoapiaddins.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/volumeTest.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/p0033.osil)
+AC_COIN_VPATH_LINK(data/osilFiles/p0201.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/CppADTestLag.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/testOperators.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/wayneQuadratic.osil)
@@ -466,6 +586,7 @@ AC_COIN_VPATH_LINK(data/osilFiles/callBackTestRowMajor.osil)
 ## osol test files
 ##
 AC_COIN_VPATH_LINK(data/osolFiles/demo.osol)
+AC_COIN_VPATH_LINK(data/osolFiles/knock.osol)
 AC_COIN_VPATH_LINK(data/osolFiles/remotegsbkip.osol)
 AC_COIN_VPATH_LINK(data/osolFiles/remoteosil.osol)
 AC_COIN_VPATH_LINK(data/osolFiles/retrieve.osol)
@@ -479,7 +600,7 @@ AC_COIN_VPATH_LINK(data/osolFiles/demopasswordjobID.osol)
 ##
 ## ospl test files
 ##
-AC_COIN_VPATH_LINK(data/osplFiles/demo.ospl)
+AC_COIN_VPATH_LINK(data/osplFiles/knock.ospl)
 ##
 ## osrl test files
 ##
@@ -490,7 +611,9 @@ AC_COIN_VPATH_LINK(data/osrlFiles/rosenbrockmod.osrl)
 ## configure test files
 ##
 AC_COIN_VPATH_LINK(data/configFiles/kill.config)
-AC_COIN_VPATH_LINK(data/configFiles/testlocal.config)
+AC_COIN_VPATH_LINK(data/configFiles/testLocal.config)
+AC_COIN_VPATH_LINK(data/configFiles/testLocalMPS.config)
+AC_COIN_VPATH_LINK(data/configFiles/testLocalNL.config)
 AC_COIN_VPATH_LINK(data/configFiles/testbrowser.config)
 AC_COIN_VPATH_LINK(data/configFiles/testlocalclp.config)
 AC_COIN_VPATH_LINK(data/configFiles/testlocalosol.config)
@@ -499,13 +622,15 @@ AC_COIN_VPATH_LINK(data/configFiles/testnl.config)
 AC_COIN_VPATH_LINK(data/configFiles/testRemoteKnock.config)
 AC_COIN_VPATH_LINK(data/configFiles/testRemotegetJobID.config)
 AC_COIN_VPATH_LINK(data/configFiles/testRemote.config)
+AC_COIN_VPATH_LINK(data/configFiles/testRemoteMPS.config)
+AC_COIN_VPATH_LINK(data/configFiles/testRemoteNL.config)
 AC_COIN_VPATH_LINK(data/configFiles/testRemoteBIG.config)
 AC_COIN_VPATH_LINK(data/configFiles/testRemoteRetrieve.config)
 AC_COIN_VPATH_LINK(data/configFiles/testRemoteSend.config)
 
 ##
-## ampl test files
-##
+## ampl tes
+AC_COIN_VPATH_LINK(data/amplFiles/testAmpl.run)
 AC_COIN_VPATH_LINK(data/amplFiles/hs71.mod)
 AC_COIN_VPATH_LINK(data/amplFiles/hs71.nl)
 AC_COIN_VPATH_LINK(data/amplFiles/parinc.mod)
@@ -558,13 +683,25 @@ AC_CONFIG_FILES([Makefile
           examples/instanceGenerator/Makefile
           examples/osTestCode/Makefile
           examples/algorithmicDiff/Makefile
+          examples/addCuts/Makefile
           applications/Makefile
           applications/amplClient/Makefile
           applications/fileUpload/Makefile
           os_addlibs.txt])
+          
 
 # Here put the location and name of the configuration header file
 AC_CONFIG_HEADER([inc/config_os.h])
 
 # Finally, we let configure write all the output...
 AC_COIN_FINALIZE
+
+
+#create a file with the current version 
+
+cd $srcdir
+#pwd
+svn info | tail -4 > $ac_default_prefix/src/version.txt
+cd $ac_default_prefix
+#pwd
+
