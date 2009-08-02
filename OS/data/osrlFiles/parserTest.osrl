@@ -51,6 +51,14 @@
 					<con idx="1">-.7662938652578929</con>
 				</dualValues>
 			</constraints>
+					<otherSolutionResults  numberOfOtherSolutionResults="2">
+						<otherSolutionResult name="requestResults1" description="the request results"  numberOfItems="1">
+							<item>Hi Gus</item>
+						</otherSolutionResult>
+						<otherSolutionResult name="requestResults2" description="the request results"  numberOfItems="1">
+							<item>Bye Gus</item>
+						</otherSolutionResult>
+					</otherSolutionResults>
 		</solution>
 		<solution targetObjectiveIdx="-2">
 			<status type="locallyOptimal" description="SUCCESS[IPOPT]: Algorithm terminated normally at a 	locally optimal point, satisfying the convergence tolerances."/>
@@ -70,11 +78,25 @@
 					<obj idx="-2">3.14</obj>
 				</values>
 			</objectives>
-			<constraints>
+			<constraints> 
 				<dualValues numberOfCon="1">
 					<con idx="1">-.7662938652578929</con>
 				</dualValues>
 			</constraints>
+			<otherSolutionResults numberOfOtherSolutionResults="2"> 
+				<otherSolutionResult name="requestResults" description="the request results" numberOfItems="5"> 
+					<item>777 Liberty,Surgical,AM,M,1,Storz,1</item> 
+					<item>777,Liberty,Surgical,AM,T,1,Storz,1</item> 
+					<item>778,Liberty,Surgical,AM,M,1,Dummy,1</item> 
+					<item>778,Liberty,Surgical,AM,T,1,Dummy,1</item> 
+					<item>812,Liberty,Surgical,AM,M,1,Stryker,1</item>
+				</otherSolutionResult> 
+				<otherSolutionResult name="test" description="additional parser tests" numberOfItems="3"> 
+					<item>  </item>
+					<item/>
+					<item></item>	
+				</otherSolutionResult> 
+			</otherSolutionResults>
 		</solution>
 	</optimization>
 </osrl>

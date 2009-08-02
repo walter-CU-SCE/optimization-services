@@ -274,6 +274,7 @@ int main(int argC, char* argV[])
 		OTHER_TESTS  = false;  
 		break;
 	case 4:
+	default:
 		BASIC_TESTS  = true;  
 		SOLVER_TESTS = true; 
 		THOROUGH     = true;     
@@ -1714,7 +1715,6 @@ if( THOROUGH == true){
 //		osol = fileUtil->getFileAsString( osolFileName.c_str());
 		osol = "";
 		solver = new CouenneSolver();
-		solver->sSolverName = "bonmin";
 		solver->osil = osil;
 		solver->osol = osol; 
 //		solver->osinstance = osilreader->readOSiL( osil);
@@ -1764,7 +1764,6 @@ if( THOROUGH == true){
 //		osol = fileUtil->getFileAsString( osolFileName.c_str());
 		osol = "";
 		solver = new CouenneSolver();
-		solver->sSolverName = "bonmin";
 		solver->osil = osil;
 		solver->osol = osol; 
 //		solver->osinstance = osilreader->readOSiL( osil);
@@ -1813,7 +1812,6 @@ if( THOROUGH == true){
 //		osol = fileUtil->getFileAsString( osolFileName.c_str());
 		osol = "";
 		solver = new CouenneSolver();
-		solver->sSolverName = "bonmin";
 		solver->osil = osil;
 		solver->osol = osol; 
 //		solver->osinstance = osilreader->readOSiL( osil);
@@ -1865,16 +1863,17 @@ if( THOROUGH == true){
 //		osol = fileUtil->getFileAsString( osolFileName.c_str());
 		osol = "";
 		solver = new CouenneSolver();
+		solver->osinstance = NULL;
 		solver->osil = osil;
 		solver->osol = osol; 
 //		solver->osinstance = osilreader->readOSiL( osil);
 //		solver->osoption   = osolreader->readOSoL( osol);
 		cout << "call the COIN - Couenne Solver for wayneQuadraticr" << endl;
-		solver->buildSolverInstance();
-	
+		//solver->buildSolverInstance();
 		std::cout << " CALL SOLVE " << std::endl;
+		solver->buildSolverInstance();
+		solver->setSolverOptions();
 		solver->solve();
-
 		check = 2.925;
 		//ok &= NearEqual(getObjVal( solver->osrl) , check,  1e-10 , 1e-10);
 		ok = ( fabs(check - getObjVal( solver->osrl) )/(fabs( check) + OS_NEAR_EQUAL) <= OS_NEAR_EQUAL) ? true : false;

@@ -2,12 +2,12 @@
 /** @file parseosrl.y
  * 
  * @author  Robert Fourer, Horand Gassmann, Jun Ma, Kipp Martin, 
- * @version 2.0, 02/04/2009
+ * @version 2.0, 19/07/2009
  * @since   OS1.0
  *
  * \remarks
- * Copyright (C) 2005-2009, Robert Fourer, Horand Gassmann, Jun Ma, Kipp Martin,
- * Northwestern University, Dalhousie University, and the University of Chicago.
+ * Copyright (C) 2005-2009, Robert Fourer, Jun Ma, Horand Gassmann, Kipp Martin,
+ * Northwestern University, Dalhousie University and the University of Chicago.
  * All Rights Reserved.
  * This software is licensed under the Common Public License. 
  * Please see the accompanying LICENSE file in root directory for terms.
@@ -72,8 +72,8 @@ int osrllex(YYSTYPE* lvalp,  YYLTYPE* llocp, void* scanner);
 #define scanner parserData->scanner
 %}
 
-%token <sval> ATTRIBUTETEXT
-%token <sval> ELEMENTTEXT
+%token <sval> ATTRIBUTETEXT%token <sval> ELEMENTTEXT
+%token <sval> ITEMTEXT
 %token <ival> INTEGER
 %token <dval> DOUBLE
 
@@ -105,6 +105,11 @@ int osrllex(YYSTYPE* lvalp,  YYLTYPE* llocp, void* scanner);
 %token NUMBEROFTIMESATT
 %token NUMBEROFSOLUTIONSATT NUMBEROFVARIABLESATT NUMBEROFCONSTRAINTSATT NUMBEROFOBJECTIVESATT
 %token NUMBEROFOTHERVARIABLERESULTSATT NUMBEROFOTHEROBJECTIVERESULTSATT NUMBEROFOTHERCONSTRAINTRESULTSATT
+%token NUMBEROFOTHERSOLUTIONRESULTSATT NUMBEROFITEMSATT 
+%token OTHERSOLUTIONRESULTSSTART OTHERSOLUTIONRESULTSEND
+%token OTHERSOLUTIONRESULTSTART  OTHERSOLUTIONRESULTEND
+%token ITEMSTART ITEMEND ITEMSTARTANDEND ITEMEMPTY
+
 
 %token NUMBEROFVARATT NUMBEROFOBJATT NUMBEROFCONATT TARGETOBJECTIVEIDXATT IDXATT 
 %token TYPEATT EMPTYTYPEATT DESCRIPTIONATT EMPTYDESCRIPTIONATT NAMEATT EMPTYNAMEATT 
@@ -125,8 +130,8 @@ osrlstart:	OSRLSTART  GREATERTHAN
 
 generalElement: | GENERALSTART generalStatus serviceURI serviceName instanceName jobID headerMessage GENERALEND ; 
    
-generalStatus: GENERALSTATUSSTART anotherGeneralStatusATT GREATERTHAN GENERALSTATUSEND {if(parserData->generalStatusTypePresent == false) osrlerror(NULL, NULL, NULL, "a type attribute required for generalStatus element");}
-| GENERALSTATUSSTART anotherGeneralStatusATT ENDOFELEMENT {if(parserData->generalStatusTypePresent == false) osrlerror(NULL, NULL, NULL, "a type attribute required for generalStatus element"); parserData->generalStatusTypePresent = false;};
+generalStatus: GENERALSTATUSSTART anotherGeneralStatusATT GREATERTHAN GENERALSTATUSEND {if(parserData->generalStatusTypePresent == false) osrlerror(NULL, NULL, parserData, "a type attribute required for generalStatus element");}
+| GENERALSTATUSSTART anotherGeneralStatusATT ENDOFELEMENT {if(parserData->generalStatusTypePresent == false) osrlerror(NULL, NULL, parserData, "a type attribute required for generalStatus element"); parserData->generalStatusTypePresent = false;};
 
 anotherGeneralStatusATT: generalstatusatt
 	| anotherGeneralStatusATT generalstatusatt;
@@ -173,7 +178,7 @@ timingInformation:
 | TIMINGINFORMATIONSTART numberoftimes timingContent;
 
 numberoftimes: NUMBEROFTIMESATT QUOTE INTEGER QUOTE 
-{	if ($3 < 0) osrlerror(NULL, NULL, NULL, "number of time measurements cannot be negative");
+{	if ($3 < 0) osrlerror(NULL, NULL, parserData, "number of time measurements cannot be negative");
 	parserData->numberOfTimes = $3;
 	parserData->ivar = 0;
 };
@@ -185,7 +190,7 @@ listOfTimes: | listOfTimes time;
 time: TIMESTARTANDEND
     | TIMESTART timeAttList GREATERTHAN timeValue TIMEEND
       {if (parserData->ivar == parserData->numberOfTimes)
-           osrlerror(NULL, NULL, NULL, "Too many time measurements");
+           osrlerror(NULL, NULL, parserData, "Too many time measurements");
        osresult->addTimingInformation(parserData->timeType, parserData->timeCategory,
                                       parserData->timeUnit, parserData->timeDescription, parserData->timeValue);       
        parserData->ivar++;
@@ -243,25 +248,22 @@ solution:
 | solution anothersolution;  
 
 
-anothersolution: SOLUTIONSTART {parserData->numberOfVar = 0;  parserData->numberOfCon = 0;  parserData->numberOfObj = 0;} targetObjectiveIDXATT GREATERTHAN status message variables objectives  constraints  otherSolution
+anothersolution: SOLUTIONSTART {parserData->numberOfVar = 0;  parserData->numberOfCon = 0;  parserData->numberOfObj = 0;} targetObjectiveIDXATT GREATERTHAN status message variables objectives  constraints  otherSolutionResults solutionEnd
    {
    if (parserData->solutionIdx == parserData->numberOfSolutions) 
-        osrlerror(NULL, NULL, NULL, "too many solutions"); 
+        osrlerror(NULL, NULL, parserData, "too many solutions"); 
     parserData->solutionIdx++;
-    
-
-    
    };
 
 targetObjectiveIDXATT: 
 | TARGETOBJECTIVEIDXATT quote INTEGER quote {
-	if($3 >= 0) osrlerror(NULL, NULL, NULL, "target objective index must be negative");
+	if($3 >= 0) osrlerror(NULL, NULL, parserData, "target objective index must be negative");
 /*  	osresult->optimization->solution[parserData->solutionIdx]->targetObjectiveIdx = $3;*/
   	osresult->setSolutionTargetObjectiveIdx(parserData->solutionIdx, $3);
  };
 
-status: STATUSSTART anotherStatusATT GREATERTHAN  STATUSEND {if(parserData->statusTypePresent == false) osrlerror(NULL, NULL, NULL, "a type attribute required for status element");  osresult->setSolutionStatus(parserData->solutionIdx, parserData->statusType, parserData->statusDescription);}
-| STATUSSTART anotherStatusATT ENDOFELEMENT {if(parserData->statusTypePresent == false) osrlerror(NULL, NULL, NULL, "a type attribute required for status element"); parserData->statusTypePresent = false; osresult->setSolutionStatus(parserData->solutionIdx, parserData->statusType, parserData->statusDescription);};
+status: STATUSSTART anotherStatusATT GREATERTHAN  STATUSEND {if(parserData->statusTypePresent == false) osrlerror(NULL, NULL, parserData, "a type attribute required for status element");  osresult->setSolutionStatus(parserData->solutionIdx, parserData->statusType, parserData->statusDescription);}
+| STATUSSTART anotherStatusATT ENDOFELEMENT {if(parserData->statusTypePresent == false) osrlerror(NULL, NULL, parserData, "a type attribute required for status element"); parserData->statusTypePresent = false; osresult->setSolutionStatus(parserData->solutionIdx, parserData->statusType, parserData->statusDescription);};
 
 
 anotherStatusATT: statusatt
@@ -529,9 +531,122 @@ otherObjectives:
 otherConstraints:
 | DUMMY;
 
-otherSolution: solutionEnd 
-| DUMMY solutionEnd;
+otherSolutionResults: 
+| OTHERSOLUTIONRESULTSSTART numberOfOtherSolutionResults GREATERTHAN otherSolutionResultList OTHERSOLUTIONRESULTSEND
+{
+	if(parserData->iOther < osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->numberOfOtherSolutionResults)
+		osrlerror(NULL, NULL, parserData, "fewer OtherSolutionResult elements present than stated in  numberOfOtherSolutionResults attribute");
+};
+
+numberOfOtherSolutionResults: NUMBEROFOTHERSOLUTIONRESULTSATT QUOTE INTEGER  
+{	
+	int temp;
+	temp = $3;
+	if (temp < 0) osrlerror(NULL, NULL, parserData, "number of other solution results cannot be negative");
+	if (osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults != NULL)
+		osrlerror(NULL, NULL, parserData, "otherSolutionResults previously allocated");
+	osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults = new OtherSolutionResults();	
+	osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->numberOfOtherSolutionResults = temp;
+	osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult = new OtherSolutionResult*[ temp];
+	if (temp > 0)
+		for(int i = 0; i < temp; i++) 	
+			osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[i] = new OtherSolutionResult();
+parserData->iOther = 0; // this will index the number of otherSolutionResult objects
+} QUOTE;
     
+otherSolutionResultList:  | otherSolutionResultList anotherSolutionResult;
+
+anotherSolutionResult: OTHERSOLUTIONRESULTSTART  anotherSolutionResultAttList GREATERTHAN itemList OTHERSOLUTIONRESULTEND
+{
+if (parserData->kounter < osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->numberOfItems)
+	osrlerror(NULL, NULL, parserData, "fewer item elements present than given in numberOfItems attribute");
+
+parserData->iOther++;
+
+
+};
+
+anotherSolutionResultAttList: 
+   | anotherSolutionResultAttList {if(parserData->iOther >= osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->numberOfOtherSolutionResults)
+	osrlerror(NULL, NULL, parserData, "more OtherSolutionResult elements present than in  numberOfOtherSolutionResults attribute");
+} anotherSolutionResultAtt ;
+
+anotherSolutionResultAtt: numberOfItems | anotherSolutionResultNameATT | anotherSolutionResultCategoryATT | anotherSolutionDescriptionATT;
+
+numberOfItems: NUMBEROFITEMSATT QUOTE INTEGER QUOTE 
+{	
+
+int temp;
+temp = $3;
+if (temp < 0) osrlerror(NULL, NULL, parserData, "number of items cannot be negative");
+	osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->numberOfItems = temp;
+
+
+
+
+
+	if (osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->item != NULL)
+		osrlerror(NULL, NULL, parserData, "item array was previously allocated");
+	osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->item = new std::string[temp];
+	parserData->kounter = 0; //this will count the number of items in an otherSolutionResult object
+};
+
+anotherSolutionResultNameATT: 
+  EMPTYNAMEATT 
+{ 
+	parserData->tmpOtherName=""; 
+	parserData->otherNamePresent = true; 
+	parserData->otherVarStruct->name = "";
+};
+  | NAMEATT ATTRIBUTETEXT quote
+{
+	parserData->tmpOtherName=$2; parserData->otherNamePresent = true;
+	osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->name = $2;
+	free($2);
+};
+
+anotherSolutionResultCategoryATT:
+CATEGORYATT ATTRIBUTETEXT QUOTE {
+osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->category = $2;
+free($2);}
+   | EMPTYCATEGORYATT ;
+ 
+anotherSolutionDescriptionATT:
+DESCRIPTIONATT ATTRIBUTETEXT QUOTE {
+osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->description = $2;
+free($2);}
+   | EMPTYDESCRIPTIONATT ;
+
+itemList: 
+  | itemList anotherSolutionItem;
+
+anotherSolutionItem: ITEMSTARTANDEND
+{
+if (parserData->kounter >= osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->numberOfItems)
+	osrlerror(NULL, NULL, parserData, "number of <item> elements exceeds numberOfItems specified");
+parserData->itemContent = "";
+osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->item[parserData->kounter] = parserData->itemContent;
+parserData->kounter++;
+}
+| ITEMEMPTY 
+{
+if (parserData->kounter >= osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->numberOfItems)
+	osrlerror(NULL, NULL, parserData, "number of <item> elements exceeds numberOfItems specified");
+parserData->itemContent = "";
+osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->item[parserData->kounter] = parserData->itemContent;
+parserData->kounter++;
+}
+| ITEMSTART  
+{
+if (parserData->kounter >= osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->numberOfItems)
+	osrlerror(NULL, NULL, parserData, "number of <item> elements exceeds numberOfItems specified");
+
+osresult->optimization->solution[parserData->solutionIdx]->otherSolutionResults->otherSolutionResult[parserData->iOther]->item[parserData->kounter] = parserData->itemContent;
+parserData->kounter++;
+}
+ITEMTEXT {parserData->itemContent = $3; free($3);} ITEMEND;
+
+
 solutionEnd: SOLUTIONEND  {
 
 	//
