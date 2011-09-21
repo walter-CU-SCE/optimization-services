@@ -15,14 +15,15 @@ ObjType = 1;
 % leave Q empty if there are no quadratic terms
 Q = [];
 prob_name = 'ParInc Example';
-password = 'chicagoesmuyFRIO';
+password = '';
 %
 %
 %the solver
 solverName = 'clp';
 %the remote service service address
 %if left empty we solve locally
-serviceAddress='http://gsbkip.chicagogsb.edu/os/OSSolverService.jws';
+serviceAddress='';
 % now solve
 OSCallMatlabSolver( numVar, numCon, A, BL, BU, OBJ, VL, VU, ObjType, ... 
     VarType, Q, prob_name, password, solverName, serviceAddress)
+

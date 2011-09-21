@@ -2,7 +2,7 @@
 <!-- edited with XMLSpy v2008 (http://www.altova.com) by Gus Gassmann (Dalhousie University) -->
 <!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Jun Ma (Northwestern University) -->
 <!-- schema stage stamping: experiment -> draft -> proposal -> recommendation -> finalization -> version 1.0, 1.1 2.0, ... -->
-<xs:schema xmlns="os.optimizationservices.org" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="os.optimizationservices.org" elementFormDefault="qualified" attributeFormDefault="unqualified">
+<xs:schema targetNamespace="os.optimizationservices.org" xmlns="os.optimizationservices.org" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<!--OSrL.xsd: version 2.0 (The entire schema except for osrl->optimization->osal)-->
 	<xs:include schemaLocation="OSgL.xsd"/>
 	<xs:include schemaLocation="OSaL.xsd"/>
@@ -16,6 +16,11 @@
 			<xs:documentation>version 2.0, all descendant elements included except for osrl->optimization->osal</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
+			<xs:element name="resultHeader" type="GeneralFileHeader" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>since version 2.3</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="general" type="GeneralResult" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>since version 2.0</xs:documentation>
@@ -235,7 +240,7 @@
 		<xs:sequence>
 			<xs:element name="substatus" type="GeneralSubstatus" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
-		<xs:attribute name="numberOfSubstatuses" type="xs:nonNegativeInteger" default="0" use="optional"/>
+		<xs:attribute name="numberOfSubstatuses" type="xs:nonNegativeInteger" use="optional" default="0"/>
 		<xs:attribute name="type" use="required">
 			<xs:simpleType>
 				<xs:restriction base="xs:string">
@@ -267,6 +272,7 @@
 			<xs:element name="otherSolutionResults" type="OtherSolutionResults" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute name="targetObjectiveIdx" type="xs:negativeInteger" use="optional"/>
+		<xs:attribute name="targetObjectiveName" type="xs:string" use="optional"/>
 		<xs:attribute name="weightedObjectives" type="xs:boolean" use="optional" default="false"/>
 	</xs:complexType>
 	<xs:complexType name="OptimizationSolutionStatus">
@@ -316,6 +322,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:double">
 				<xs:attribute name="idx" type="xs:negativeInteger" use="optional" default="-1"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -362,6 +369,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
 				<xs:attribute name="idx" type="xs:negativeInteger" use="optional" default="-1"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -384,6 +392,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:double">
 				<xs:attribute name="idx" type="xs:nonNegativeInteger" use="required"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -397,6 +406,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
 				<xs:attribute name="idx" type="xs:nonNegativeInteger" use="required"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -413,18 +423,10 @@
 					<xs:documentation>If present, numberOfVar must be set in parent, and the number of entries must agree with numberOfVar</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="enumeration" minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="enumeration" type="OtherOptionEnumeration" minOccurs="0" maxOccurs="unbounded">
 				<xs:annotation>
 					<xs:documentation>If present, numberOfEnumerations must be set in parent, and the number of entries must agree with numberOfEnumerations</xs:documentation>
 				</xs:annotation>
-				<xs:complexType>
-					<xs:complexContent>
-						<xs:extension base="IntVector">
-							<xs:attribute name="value" type="xs:string" use="required"/>
-							<xs:attribute name="description" type="xs:string" use="optional"/>
-						</xs:extension>
-					</xs:complexContent>
-				</xs:complexType>
 			</xs:element>
 		</xs:choice>
 		<xs:attribute name="numberOfVar" type="xs:nonNegativeInteger" use="optional" default="0"/>
@@ -443,6 +445,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
 				<xs:attribute name="idx" type="xs:nonNegativeInteger" use="required"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -458,6 +461,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:double">
 				<xs:attribute name="idx" type="xs:nonNegativeInteger" use="required"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -504,6 +508,7 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
 				<xs:attribute name="idx" type="xs:nonNegativeInteger" use="required"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>

@@ -1,10 +1,8 @@
 # Copyright (C) 2006 International Business Machines.
 # All Rights Reserved.
-# This file is distributed under the Common Public License.
+# This file is distributed under the Eclipse Public License.
 
-## $Id: configure.ac 786 2006-06-01 04:10:46Z andreasw $
-
-# Author:  Andreas Waechter            IBM    2006-04-13
+## $Id$
 
 #############################################################################
 #                       Names and other basic things                        #
@@ -12,17 +10,17 @@
 
 AC_PREREQ(2.59)
 
-AC_INIT([OS],[2.4.0],[coin-os@list.coin-or.org])
+AC_INIT([OS],[2.4.0],[os@list.coin-or.org])
 
 AC_COPYRIGHT([
 Copyright 2006 International Business Machines and others.
 All Rights Reserved.
-This file is part of the open source package Coin which is distributed
-under the Common Public License.])
+This file is part of the open source package OS which is distributed
+under the Eclipse Public License.])
 
 # List one file in the package so that the configure script can test
 # whether the package is actually there
-AC_CONFIG_SRCDIR(src/OSUtils/OSErrorClass.cpp)
+AC_CONFIG_SRCDIR(src/OSConfig.h)
 
 # Where should everything be installed by default?  Here, we want it
 # to be installed directly in 'bin', 'lib', 'include' subdirectories
@@ -30,41 +28,21 @@ AC_CONFIG_SRCDIR(src/OSUtils/OSErrorClass.cpp)
 # /usr/local.
 AC_PREFIX_DEFAULT([`pwd`])
 
-
-
-#############################################################################
-#                         GET THE VERSION NUMBER                            #
-#############################################################################
-AC_COIN_PROJECTDIR_INIT(OS,10:0:4)
-
-
-
-#############################################################################
+############################################################################
 #                         Standard build tool stuff                         #
 #############################################################################
+
 # Get the system type
 AC_CANONICAL_BUILD
 
-# Initialise ADDLIBS and FADDLIBS
-AC_COIN_PROJECTDIR_INIT
+# Initialise projectdir
+AC_COIN_PROJECTDIR_INIT(OS,10:0:4)
 
-LIBS_without_ADDLIBS="$LIBS"
-  
 # Check if user wants to produce debugging code
 AC_COIN_DEBUG_COMPILE(OS)
 
 # Get the name of the C++ compiler and appropriate compiler options
-coin_opt_cxxflags="-O3"
 AC_COIN_PROG_CXX
-
-# Check if we have a Fortran compiler; if we do, acquire the appropriate
-# options. This has to be done before we call AC_COIN_INIT_AUTO_TOOLS, else
-# it will helpfully set FFLAGS to an incorrect value.
-#AC_COIN_FIND_F77
-#if test "$F77" != unavailable ; then
-#  AC_COIN_PROG_F77
-#  AC_COIN_F77_WRAPPERS
-#fi
 
 # Initialize automake and libtool
 AC_COIN_INIT_AUTO_TOOLS
@@ -86,9 +64,7 @@ AC_C_BIGENDIAN
 #AC_DEFINE([SIZEOF_LONG_LONG],[0],[in C++ make sure SIZEOF_LONG_LONG is less than 8])
 #KIPP deal with the above
 
-AC_LANG_PUSH( C++)
-
-
+AC_LANG_PUSH(C)
 
 # the following does not work for cached variables
 #AC_CHECK_SIZEOF( long long)
@@ -96,259 +72,44 @@ AC_CHECK_SIZEOF( int)
 AC_CHECK_SIZEOF( double)
 AC_CHECK_SIZEOF( long)
 
+AC_LANG_POP(C)
 
 #############################################################################
-#                              COIN components                              #
+#                           COIN-OR components                              #
 #############################################################################
-AC_COIN_CHECK_PACKAGE(Ipopt, [ipopt], [OSLib])
-AC_COIN_CHECK_PACKAGE(ASL, [coinasl], [OSLib])
 
-AC_COIN_CHECK_PACKAGE(CoinDepend, [coinutils osi], [OSLib])
-if test $coin_has_coindepend != yes ; then
-  AC_MSG_ERROR([Required package CoinUtils or Osi not available.])
+AC_COIN_CHECK_PACKAGE(CoinUtils,[coinutils],[OSLib])
+if test $coin_has_coinutils != yes ; then
+  AC_MSG_ERROR([Required package CoinUtils not available.])
 fi
-AC_COIN_CHECK_PACKAGE(Clp,  [osi-clp],  [OSLib])
-AC_COIN_CHECK_PACKAGE(DyLP, [osi-dylp], [OSLib])
-AC_COIN_CHECK_PACKAGE(Vol,  [osi-vol],  [OSLib])
-AC_COIN_CHECK_PACKAGE(SYMPHONY,  [osi-sym],  [OSLib])
-AC_COIN_CHECK_PACKAGE(Cbc,  [osi-cbc],  [OSLib])
-AC_COIN_CHECK_PACKAGE(Cgl,  [cgl],  [OSLib])
+AC_COIN_CHECK_PACKAGE(Ipopt,    [ipopt cppad], [OSLib])
+AC_COIN_CHECK_PACKAGE(Clp,      [osi-clp],  [OSLib])
+AC_COIN_CHECK_PACKAGE(DyLP,     [osi-dylp], [OSLib])
+AC_COIN_CHECK_PACKAGE(Vol,      [osi-vol],  [OSLib])
+AC_COIN_CHECK_PACKAGE(SYMPHONY, [osi-sym],  [OSLib])
+AC_COIN_CHECK_PACKAGE(Cpx,      [osi-cplex],[OSLib])
+AC_COIN_CHECK_PACKAGE(Glpk,     [osi-glpk], [OSLib])
+AC_COIN_CHECK_PACKAGE(Cbc,      [osi-cbc],  [OSLib])
+AC_COIN_CHECK_PACKAGE(Bonmin,   [bonmin cppad], [OSLib])
+AC_COIN_CHECK_PACKAGE(Couenne,  [couenne cppad],[OSLib])
+AC_COIN_CHECK_PACKAGE(Bcp,      [bcp],      [OSLib])
+AC_COIN_CHECK_PACKAGE(ASL,      [coinasl],  [OSLib])
+AC_COIN_CHECK_PACKAGE(cppad,    [cppad],    [OSLib])
 
-AC_COIN_HAS_PROJECT(cppad)
-#AC_COIN_CHECK_PACKAGE(cppad)
-AC_COIN_CHECK_PACKAGE(Couenne, [couenne], [OSLib])
-AC_COIN_CHECK_PACKAGE(Bonmin,  [bonmin],  [OSLib])
-AC_COIN_CHECK_PACKAGE(Bcp,     [bcp],     [OSLib])
-
-AC_COIN_CHECK_PACKAGE(Cpx,  [osi-cplex],  [OSLib])
-AC_COIN_CHECK_PACKAGE(Glpk, [osi-glpk],   [OSLib])
-
-
-#if test $coin_has_cppad = skipping &&
-#   test $coin_has_ipopt != skipping ; then
-#       AC_MSG_ERROR([Ipopt is present, but not the necessary cppad])   
-#fi
-
-#if test $coin_has_ipopt = skipping &&
-#   test $coin_has_bonmin != skipping ; then
-#       AC_MSG_ERROR([Bonmin is present, but not the necessary Ipopt])   
-#fi
-
-#if test $coin_has_bonmin = skipping &&
-#   test $coin_has_couenne != skipping ; then
-#       AC_MSG_ERROR([Couenne is present, but not the necessary Bonmin])   
-#fi
-
-
-
-#if test $coin_has_coinutils != unavailable &&
-#   test $coin_has_coinutils != skipping; then
-#  case $CXX in
-#    cl*)
-#       coinutilslib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libCoinUtils.lib';;
-#     *)
-#       coinutilslib="-L\$(INSTALLIBDIR) -lCoinUtils";;
-#  esac
-#  AC_SUBST(coinutilslib) 
-#  else
-#    AC_MSG_ERROR([cannot find CoinTuils which is necessary to build OS])   
-#fi
-#
-#if test $coin_has_clp != unavailable &&
-#   test $coin_has_clp != skipping; then
-#  case $CXX in
-#    cl*)
-#       clplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libClp.lib'
-#       osiclplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiClp.lib';;
-#     *)
-#       clplib="-L\$(INSTALLIBDIR) -lClp"
-#       osiclplib="-L\$(INSTALLIBDIR) -lOsiClp";;
-#  esac
-#  AC_SUBST(clplib)
-#  AC_SUBST(osiclplib) 
-#  else
-#    AC_MSG_ERROR([cannot find Clp which is necessary to build OS])   
-#fi
-#
-#if test $coin_has_cbc != unavailable &&
-#   test $coin_has_cbc != skipping; then
-# case $CXX in
-#    cl*)
-#       cbclib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libCbcSolver.lib    `$(CYGPATH_W) $(INSTALLIBDIR)`\\libCbc.lib'
-#       osicbclib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiCbc.lib';;
-#     *)
-#       cbclib="-L\$(INSTALLIBDIR) -lCbcSolver -lCbc"
-#       osicbclib="-L\$(INSTALLIBDIR) -lOsiCbc";;
-#  esac
-#  AC_SUBST(cbclib) 
-#  AC_SUBST(osicbclib)
-#  else
-#    AC_MSG_ERROR([cannot find Cbc which is necessary to build OS])   
-#fi 
-
-
-#if test $coin_has_cgl != unavailable &&
-#   test $coin_has_cgl != skipping; then
-#  case $CXX in
-#    cl*)
-#       cgllib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libCgl.lib';;
-#     *)
-#       cgllib="-L\$(INSTALLIBDIR) -lCgl";;
-#  esac
-#  AC_SUBST(cgllib) 
-#  else
-#    AC_MSG_ERROR([cannot find Cgl which is necessary to build OS])   
-#fi
-
-
-#if test $coin_has_osi != unavailable &&
-#   test $coin_has_osi != skipping; then
-#  case $CXX in
-#    cl*)
-#       osilib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsi.lib';;
-#     *)
-#       osilib="-L\$(INSTALLIBDIR) -lOsi";;
-#  esac
-#  AC_SUBST(osilib) 
-#  else
-#    AC_MSG_ERROR([cannot find Osi which is necessary to build OS])   
-#fi
-
-
-#if test $coin_has_dylp != unavailable &&
-#   test $coin_has_dylp != skipping; then
-#  case $CXX in
-#    cl*)
-#       osiglpklib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiGlpk.lib';;
-#     *)
-#       osiglpklib="-L\$(INSTALLIBDIR) -lOsiGlpk";;
-#  esac
-#  AC_SUBST(osiglpklib) 
-#fi
-
-
-
-
-
-#if test $coin_has_dylp != unavailable &&
-#   test $coin_has_dylp != skipping; then
-#  case $CXX in
-#    cl*)
-#       dylplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libDylp.lib'
-#       osidylplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiDylp.lib';;
-#     *)
-#       dylplib="-L\$(INSTALLIBDIR) -lDylp"
-#       osidylplib="-L\$(INSTALLIBDIR) -lOsiDylp";;
-#  esac
-#  AC_SUBST(dylplib) 
-#  AC_SUBST(osidylplib) 
-#fi
-
-
-#if test $coin_has_vol != unavailable &&
-#   test $coin_has_vol != skipping; then
-#  case $CXX in
-#    cl*)
-#       vollib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libVol.lib'
-#       osivollib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiVol.lib';;
-#     *)
-#       vollib="-L\$(INSTALLIBDIR) -lVol"
-#       osivollib="-L\$(INSTALLIBDIR) -lOsiVol";;
-#  esac
-#  AC_SUBST(vollib) 
-#  AC_SUBST(osivollib) 
-#fi
-
-
-#if test $coin_has_bcp != unavailable &&
-#   test $coin_has_bcp != skipping; then
-#  case $CXX in
-#    cl*)
-#       bcplib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libbcp.lib';;
-#     *)
-#       bcplib="-L\$(INSTALLIBDIR) -lBcp";;
-#  esac
-#  AC_SUBST(bcplib)
-#fi
-
-
-
-
-#if test $coin_has_symphony != unavailable &&
-#   test $coin_has_symphony != skipping; then
-#  case $CXX in
-#    cl*)
-#       symphonylib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libSym.lib'
-#       osisymphonylib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libOsiSym.lib';;
-#     *)
-#       symphonylib="-L\$(INSTALLIBDIR) -lSym"
-#       osisymphonylib="-L\$(INSTALLIBDIR) -lOsiSym";;
-#  esac
-#  AC_SUBST(symphonylib) 
-#  AC_SUBST(osisymphonylib)  
-#fi
-
-#if test $coin_has_ipopt != unavailable &&
-#   test $coin_has_ipopt != skipping; then
-#  case $CXX in
-#    cl*)
-#       ipoptlib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libipopt.lib';;
-#    xl*)
-#       AC_DEFINE([XLC_],[1],[use if XLC is the compiler]);;
-#     *)
-#       ipoptlib="-L\$(INSTALLIBDIR) -lipopt";;
-#  esac
-#  AC_SUBST(ipoptlib)  
-#fi
-
-
-#if test $coin_has_couenne != unavailable &&
-#   test $coin_has_couenne != skipping; then
-#  case $CXX in
-#    cl*)
-#       couennelib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libboncouenne.lib  `$(CYGPATH_W) $(INSTALLIBDIR)`\\libcouennereadnl.lib   `
-#(CYGPATH_W) $(INSTALLIBDIR)`\\libcouenne.lib        ';;
-#     *)
-#       couennelib="-L\$(INSTALLIBDIR) -lBonCouenne -lCouenneReadnl -lCouenne ";;
-#  esac
-#  AC_SUBST(couennelib)  
-#fi
-
-
-#if test $coin_has_bonmin != unavailable &&
-#   test $coin_has_bonmin != skipping; then
-#  case $CXX in
-#    cl*)
-#       bonminlib='`$(CYGPATH_W) $(INSTALLIBDIR)`\\libbonmin.lib';;
-#     *)
-#       bonminlib="-L\$(INSTALLIBDIR) -lbonminampl -lbonmin";;
-#  esac
-#  AC_SUBST(bonminlib)  
-#fi
-
-
-#############################################################################
-#                             Need to know if we have MS cl                           #
-#############################################################################
-case $CXX in
-    cl*)
-    cl_compiler=yes  ;;
-esac
-
-AM_CONDITIONAL(MSCL_, test x$cl_compiler = xyes)
+# The COIN_HAS_CPPAD symbol should not go into the public configuration
+# header file (config_os.h).
+# However, we need to distinguish in OS' public headers files whether
+# CppAD is available or not, so we define an additional symbol.
+if test $coin_has_cppad = yes ; then
+  AC_DEFINE(OS_HAS_CPPAD, [1], [Define to 1 if OS uses CppAD])
+fi
 
 #############################################################################
 #                             Third party solvers                           #
 #############################################################################
 
-#AC_COIN_CHECK_USER_LIBRARY([Cplex],[CPX],[cplex.h],[])
-AC_COIN_CHECK_USER_LIBRARY([Lindo],[LINDO],[lindo.h],[])
-#AC_COIN_CHECK_USER_LIBRARY([Ipopt],[IPOPT],[IpoptConfig.h],[])
-AC_COIN_CHECK_USER_LIBRARY([Knitro],[KNITRO],[knitro.h],[])
-
-#AC_COIN_HAS_GLPK(Glpk)
-#AC_COIN_HAS_ASL
-
+AC_COIN_CHECK_USER_LIBRARY([Lindo], [LINDO], [lindo.h], [OSLib])
+AC_COIN_CHECK_USER_LIBRARY([Knitro],[KNITRO],[knitro.h],[OSLib])
 
 
 #############################################################################
@@ -447,12 +208,11 @@ fi
 ############################################################################
 ############################################################################
 
-AC_LANG_PUSH(C++)
-
 ################
 # Header Files #
 ################
 
+AC_LANG_PUSH(C++)
 
 AC_COIN_CHECK_CXX_CHEADER(math)
 AC_COIN_CHECK_CXX_CHEADER(ctype)
@@ -468,140 +228,35 @@ AC_COIN_CHECK_HEADER(stdint.h)
 
 #AC_CHECK_HEADERS([windows.h])
 
+AC_LANG_POP(C++)
 
 ###################
-# Function isnan #  -- this is copied directly from CoinUtils
+# Function isnan  #
 ###################
-MY_C_ISNAN=
-AC_CHECK_DECL([isnan],[MY_C_ISNAN=isnan],,[
-#ifdef HAVE_CMATH
-# include <cmath>
-#else
-# ifdef HAVE_MATH_H
-#  include <math.h>
-# endif
-#endif
-#ifdef HAVE_CFLOAT
-# include <cfloat>
-#else
-# ifdef HAVE_FLOAT_H
-#  include <float.h>
-# endif
-#endif
-#ifdef HAVE_CIEEEFP
-# include <cieeefp>
-#else
-# ifdef HAVE_IEEEFP_H
-#  include <ieeefp.h>
-# endif
-#endif])
 
-# It appears that for some systems (e.g., Mac OSX), cmath will provide only
-# std::isnan, and bare isnan will be unavailable. Typically we need a parameter
-# in the test to allow C++ to do overload resolution.
+AC_COIN_CHECK_ISNAN
 
-if test -z "$MY_C_ISNAN"; then
-  AC_CHECK_DECL([std::isnan(42.42)],[MY_C_ISNAN=std::isnan],,[
-#ifdef HAVE_CMATH
-# include <cmath>
-#else
-# ifdef HAVE_MATH_H
-#  include <math.h>
-# endif
-#endif
-#ifdef HAVE_CFLOAT
-# include <cfloat>
-#else
-# ifdef HAVE_FLOAT_H
-#  include <float.h>
-# endif
-#endif
-#ifdef HAVE_CIEEEFP
-# include <cieeefp>
-#else
-# ifdef HAVE_IEEEFP_H
-#  include <ieeefp.h>
-# endif
-#endif])
-fi
+###################
+# Sockets library #
+###################
 
-if test -z "$MY_C_ISNAN"; then
-  AC_CHECK_DECL([_isnan],[MY_C_ISNAN=_isnan],,[
-#ifdef HAVE_CMATH
-# include <cmath>
-#else
-# ifdef HAVE_MATH_H
-#  include <math.h>
-# endif
-#endif
-#ifdef HAVE_CFLOAT
-# include <cfloat>
-#else
-# ifdef HAVE_FLOAT_H
-#  include <float.h>
-# endif
-#endif
-#ifdef HAVE_CIEEEFP
-# include <cieeefp>
-#else
-# ifdef HAVE_IEEEFP_H
-#  include <ieeefp.h>
-# endif
-#endif])
-fi
-if test -z "$MY_C_ISNAN"; then
-  AC_CHECK_DECL([isnand],[MY_C_ISNAN=isnand],,[
-#ifdef HAVE_CMATH
-# include <cmath>
-#else
-# ifdef HAVE_MATH_H
-#  include <math.h>
-# endif
-#endif
-#ifdef HAVE_CFLOAT
-# include <cfloat>
-#else
-# ifdef HAVE_FLOAT_H
-#  include <float.h>
-# endif
-#endif
-#ifdef HAVE_CIEEEFP
-# include <cieeefp>
-#else
-# ifdef HAVE_IEEEFP_H
-#  include <ieeefp.h>
-# endif
-#endif])
-fi
-if test -z "$MY_C_ISNAN"; then
-  AC_MSG_WARN(Cannot find C-function for checking NaN. Check will return false)
-else
-  AC_DEFINE_UNQUOTED([MY_C_ISNAN],[$MY_C_ISNAN],
-                     [Define to be the name of C-function for NaN check])
-fi
-
-
-
-# Set ADDLIBS appropriately for socket libraries. Check for the presence of
+# Check for the sockets library. Check for the presence of
 # header files, then see what we need in the way of libraries.
 AC_COIN_OS_SOCKET_LIBS
 if test x$ac_coin_found_socket_libraries = xno ; then
   AC_MSG_ERROR([Can't build OS without socket libraries!])
 fi
-ADDLIBS="$WINSOCKLIBS   $ADDLIBS"
   
 AM_CONDITIONAL(USEMULTIPLYDEFINED, test x$mac_osx = xyes)
-
-
  
 #############################################################################
-#                     Parser stuff                         #
+#                                 Parser stuff                              #
 #############################################################################
 
 AC_PROG_YACC
 
 #############################################################################
-# Define the root of the OS project###
+# Define the root of the OS project                                         #
 #############################################################################
 
 AC_SUBST(OSROOT_DIR)
@@ -625,18 +280,8 @@ esac
 AC_SUBST(oslib)
 
 #############################################################################
-#  See if we are disabling shared libs###
+#  See if we are disabling shared libs                                      #
 #############################################################################
-
-
-     if test $enable_static != yes; then
-         USE_ASL_LIB=$ASLLIB
-     fi
-
-AC_SUBST(USE_ASL_LIB)
-
-
-
 
 ##
 ## the help file
@@ -667,6 +312,7 @@ AC_COIN_VPATH_LINK(data/osilFiles/LP_noconstraint.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/LP_infeasible.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/LP_unbounded.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/muer.osil)
+AC_COIN_VPATH_LINK(data/osilFiles/nanTest.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/nonconvex.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/parincInteger.osil)
 AC_COIN_VPATH_LINK(data/osilFiles/parincLinear.osil)
@@ -828,17 +474,41 @@ AC_COIN_VPATH_LINK(data/matlabFiles/OSCallMatlabSolver.m)
 ###
 ## columnGen Application files
 ##
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen5.osol)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen5.osil)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen10.osol)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen10.osil)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen12.osol)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen12.osil)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgen12b.osil)
 
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgenpercentile4.osol)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgenpercentile4b.osol)
-AC_COIN_VPATH_LINK(applications/columnGen/data/colgenpercentile4.osil)
+AC_COIN_VPATH_LINK(applications/columnGen/data/colgen10.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/colgen12.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/colgen12b.osol)
+
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2009p40-25-25-25.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2009p50-25-25-25.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2009p60-25-25-25.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2009p70-25-25-25.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2009p95-140-140-140.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2009mean-25-25-25.osol)
+
+
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p75-40-40-40.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p80-40-40-40.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p85-40-40-40.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p90-40-40-40.osol)
+
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p90-40-40-60.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p90-40-60-40.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p90-60-40-40.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p90-60-20-20-40.osol)
+
+
+
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p92-40-40-60.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p92-40-60-40.osol)
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p92-60-40-40.osol)
+
+
+
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p90-120-120-120.osol)
+
+AC_COIN_VPATH_LINK(applications/columnGen/data/y2010p95-150-150-150.osol)
+
 
 ### Python Code
 AC_COIN_VPATH_LINK(applications/parsingTest/parsingTest.py)
@@ -851,10 +521,8 @@ AC_COIN_VPATH_LINK(stylesheets/OSrL.xslt)
 ##
 AC_COIN_VPATH_LINK(stylesheets/OSrL.css)
 ##
-## PYTHON FILE
-##
-AC_COIN_VPATH_LINK(test/parsingTest.py)
-##
+
+
 
 
 ##############################################################################
@@ -879,13 +547,9 @@ AC_CONFIG_FILES([Makefile
           applications/parsingTest/Makefile
           os.pc
 	  os-uninstalled.pc])
-          
 
 # Here put the location and name of the configuration header file
-AC_CONFIG_HEADER([inc/config_os.h])
+AC_CONFIG_HEADER([src/config.h src/config_os.h])
 
 # Finally, we let configure write all the output...
 AC_COIN_FINALIZE
-
-
-

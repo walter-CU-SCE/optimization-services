@@ -9,7 +9,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 ########################################################################
-#                             libOSUtils                           #
+#                             libOSUtils                               #
 ########################################################################
 
 # Name of the library compiled in this directory.  We want it to be installed
@@ -24,9 +24,12 @@ libOSUtils_la_SOURCES = \
 		OSErrorClass.h \
 		OSFileUtil.cpp \
 		OSFileUtil.h \
+                OSStringUtil.h\
+                OSStringUtil.cpp\
 		OSMathUtil.cpp \
 		OSMathUtil.h \
 		OSDataStructures.h \
+		OSParameters.cpp \
 		OSParameters.h \
 		OSdtoa.h \
 		OSdtoa.cpp
@@ -36,41 +39,32 @@ libOSUtils_la_LDFLAGS = $(LT_LDFLAGS)
 
 # Here list all include flags, relative to this "srcdir" directory.  This
 # "cygpath" stuff is necessary to compile with native compilers on Windows
-AM_CPPFLAGS =\
+AM_CPPFLAGS = \
 	-I`$(CYGPATH_W) $(srcdir)/..` \
-	-I`$(CYGPATH_W) $(srcdir)/../OSCommonInterfaces` 
+	-I`$(CYGPATH_W) $(srcdir)/../OSCommonInterfaces`   \
+	$(ASL_CFLAGS)
 
 
 #if USE_DTOA
 #AM_CPPFLAGS += -DUSE_DTOA=1
 #endif
 
-
- 
-# This line is necessary to allow VPATH compilation with MS compilers
-# on Cygwin
-DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I$(top_builddir)/inc
+# This line is necessary to allow VPATH compilation
+DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I..
 
 ########################################################################
 #                Headers that need to be installed                     #
 ########################################################################
 
 # Here list all the header files that are required by a user of the library,
-# and that therefore should be installed in 'install/coin'
+# and that therefore should be installed in 'include/coin'
 includecoindir = $(includedir)/coin
 includecoin_HEADERS = \
-	../../inc/config_os.h \
 	OSBase64.h \
 	OSErrorClass.h \
 	OSFileUtil.h \
+        OSStringUtil.h\
 	OSMathUtil.h \
 	OSDataStructures.h \
 	OSParameters.h \
 	OSdtoa.h
-
-if COIN_HAS_ASL
-#  AM_CPPFLAGS += -I`$(CYGPATH_W) $(OSSRCDIR)/src/ThirdPartyASL` 
-#  AM_CPPFLAGS += $(ASL_CPPFLAGS) 
-AM_CPPFLAGS += $(ASL_CFLAGS) 
-endif
-

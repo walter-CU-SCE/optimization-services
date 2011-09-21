@@ -44,42 +44,28 @@ libOSParsers_la_LDFLAGS = $(LT_LDFLAGS)
 
 # Here list all include flags, relative to this "srcdir" directory.  This
 # "cygpath" stuff is necessary to compile with native compilers on Windows
-AM_CPPFLAGS =\
+AM_CPPFLAGS = \
 	-I`$(CYGPATH_W) $(srcdir)/..` \
 	-I`$(CYGPATH_W) $(srcdir)/../OSUtils` \
 	-I`$(CYGPATH_W) $(srcdir)/../OSSolverInterfaces` \
-	-I`$(CYGPATH_W) $(srcdir)/../OSCommonInterfaces` 
-	
-	
-if COIN_HAS_ASL
-#  AM_CPPFLAGS += -I`$(CYGPATH_W) $(OSSRCDIR)/src/ThirdPartyASL` 
-#  AM_CPPFLAGS += $(ASL_CPPFLAGS) 
-AM_CPPFLAGS += $(ASL_CFLAGS) 
-endif
-
-
-if COIN_HAS_CPPAD
-  AM_CPPFLAGS += -I`$(CYGPATH_W) $(CPPADSRCDIR)` 
-  AM_CPPFLAGS += $(CPPAD_CPPFLAGS) 
-endif
+	-I`$(CYGPATH_W) $(srcdir)/../OSCommonInterfaces` \
+	$(OSLIB_CFLAGS)
 
 #if USE_DTOA
 #AM_CPPFLAGS += -DUSE_DTOA=1
 #endif
 
-# This line is necessary to allow VPATH compilation with MS compilers
-# on Cygwin
-DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I$(top_builddir)/inc
+# This line is necessary to allow VPATH compilation
+DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I..
 
 ########################################################################
 #                Headers that need to be installed                     #
 ########################################################################
 
 # Here list all the header files that are required by a user of the library,
-# and that therefore should be installed in 'install/coin'
+# and that therefore should be installed in 'include/coin'
 includecoindir = $(includedir)/coin
 includecoin_HEADERS = \
-	../../inc/config_os.h \
 	OSOptionsStruc.h \
 	OSParseosil.tab.hpp \
 	OSParseosrl.tab.hpp \
@@ -88,5 +74,3 @@ includecoin_HEADERS = \
 	OSiLParserData.h \
 	OSrLParserData.h \
         OSoLParserData.h
-
-

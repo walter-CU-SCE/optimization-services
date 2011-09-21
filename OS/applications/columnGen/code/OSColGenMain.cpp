@@ -9,7 +9,7 @@
  * Copyright (C) 2010, Horand Gassmann, Jun Ma, Kipp Martin,
  * Northwestern University, Dalhousie University and the University of Chicago.
  * All Rights Reserved.
- * This software is licensed under the Common Public License. 
+ * This software is licensed under the Eclipse Public License. 
  * Please see the accompanying LICENSE file in root directory for terms.
  * */                                               //
 //===========================================================================//
@@ -19,6 +19,8 @@
 #include "OSColGenApp.h"
 #include "OSFileUtil.h" 
 #include "CoinTime.hpp"
+#include "OSGeneral.h"
+
 
 
 #ifdef HAVE_CTIME
@@ -35,6 +37,8 @@
 //===========================================================================//
 int main(int argc, char ** argv){
    try{
+	   
+	
 	   OSColGenApp *colgenApp;
 	   OSOption *osoption = NULL;
 	   OSoLReader *osolreader = NULL;
@@ -57,6 +61,7 @@ int main(int argc, char ** argv){
 		
 		// define the classes
 		double cpuTime;
+		double masterCpuTime;
 		double start = CoinCpuTime();
 		fileUtil = new FileUtil();
 		osolFileName = argv[1];
@@ -70,10 +75,18 @@ int main(int argc, char ** argv){
 		//now create the column generation object
 		colgenApp = new OSColGenApp( osoption);
 		
+		 
 		//now generate the restriced master
+		//colgenApp->getInitialRestrictedMaster( );
+		
 		colgenApp->getInitialRestrictedMaster( );
-		//now solve the master
-		colgenApp->solveRestrictedMasterRelaxation();
+		
+		
+		masterCpuTime = CoinCpuTime() - start;
+		
+		//exit( 1);
+		//now solve the problem
+		colgenApp->solve();
 		
 		//garbage collection
 		delete fileUtil;
@@ -81,6 +94,8 @@ int main(int argc, char ** argv){
 		delete colgenApp;
 		
 		cpuTime = CoinCpuTime() - start;
+		
+		std::cout << "CPU TIME FOR GETTING INITIAL SOLUTION " << masterCpuTime << std::endl;
 		
 		std::cout << "CPU TIME  " << cpuTime << std::endl;
    }

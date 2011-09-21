@@ -52,31 +52,13 @@ libOSCommonInterfaces_la_LDFLAGS = $(LT_LDFLAGS)
 
 # Here list all include flags, relative to this "srcdir" directory.  This
 # "cygpath" stuff is necessary to compile with native compilers on Windows
-AM_CPPFLAGS =\
+AM_CPPFLAGS = \
 	-I`$(CYGPATH_W) $(srcdir)/..` \
 	-I`$(CYGPATH_W) $(srcdir)/../OSUtils` \
-	-I`$(CYGPATH_W) $(srcdir)/../OSSolverInterfaces`	\
-	-I`$(CYGPATH_W) $(srcdir)/../OSParsers`	
-#	-I`$(CYGPATH_W) $(COINUTILSSRCDIR)/src` \
-#	-I`$(CYGPATH_W) $(COINUTILSSRCDIR)/inc` \
-#	-I`$(CYGPATH_W) $(COINUTILSOBJDIR)/inc` 
-
-AM_CPPFLAGS += $(COINDEPEND_CFLAGS) $(COINUTILS_CFLAGS) 
+	-I`$(CYGPATH_W) $(srcdir)/../OSSolverInterfaces` \
+	-I`$(CYGPATH_W) $(srcdir)/../OSParsers` \
+	$(OSLIB_CFLAGS)
 	
-	
-	
-if COIN_HAS_ASL
-#  AM_CPPFLAGS += -I`$(CYGPATH_W) $(srcdir)/../ThirdPartyASL` 
-#  AM_CPPFLAGS += $(ASL_CPPFLAGS) 
-AM_CPPFLAGS += $(ASL_CFLAGS) 
-endif
-
-if COIN_HAS_CPPAD
-  AM_CPPFLAGS += -I`$(CYGPATH_W) $(CPPADSRCDIR)` 
-  AM_CPPFLAGS += $(CPPAD_CPPFLAGS) 
-endif
-
-
 AM_CPPFLAGS += -DLindo_Off 
 
 #if USE_DTOA
@@ -84,19 +66,17 @@ AM_CPPFLAGS += -DLindo_Off
 #endif
 
 
-# This line is necessary to allow VPATH compilation with MS compilers
-# on Cygwin
-DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I$(top_builddir)/inc
+# This line is necessary to allow VPATH compilation
+DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I..
 
 ########################################################################
 #                Headers that need to be installed                     #
 ########################################################################
 
 # Here list all the header files that are required by a user of the library,
-# and that therefore should be installed in 'install/coin'
+# and that therefore should be installed in 'include/coin'
 includecoindir = $(includedir)/coin
 includecoin_HEADERS = \
-	../../inc/config_os.h \
 	OSExpressionTree.h \
         OSGeneral.h \
 	OSInstance.h \
@@ -111,5 +91,3 @@ includecoin_HEADERS = \
         OSoLWriter.h \
         OSoLReader.h \
         OSOption.h 
-
-  

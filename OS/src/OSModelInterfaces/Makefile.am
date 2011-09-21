@@ -23,11 +23,11 @@ libOSModelInterfaces_la_DEPENDENCIES =
 # List all source files for this library, including headers
 libOSModelInterfaces_la_SOURCES = \
 	OSmps2osil.cpp \
-    OSmps2osil.h 
+	OSmps2osil.h 
 
 if COIN_HAS_ASL
-libOSModelInterfaces_la_SOURCES +=  OSnl2osil.cpp \
-	 OSnl2osil.h
+libOSModelInterfaces_la_SOURCES += OSnl2osil.cpp \
+	OSnl2osil.h
 endif
 
 # should be another if
@@ -42,26 +42,13 @@ libOSModelInterfaces_la_LDFLAGS = $(LT_LDFLAGS)
 
 # Here list all include flags, relative to this "srcdir" directory.  This
 # "cygpath" stuff is necessary to compile with native compilers on Windows
-AM_CPPFLAGS =\
+AM_CPPFLAGS = \
 	-I`$(CYGPATH_W) $(srcdir)/../OSUtils` \
 	-I`$(CYGPATH_W) $(srcdir)/..` \
-	-I`$(CYGPATH_W) $(srcdir)/../OSCommonInterfaces`  \
-	-I`$(CYGPATH_W) $(srcdir)/../OSUtils`  \
-	-I`$(CYGPATH_W) $(srcdir)/../OSParsers` 
-#	-I`$(CYGPATH_W) $(COINUTILSSRCDIR)/src` \
-#	-I`$(CYGPATH_W) $(COINUTILSOBJDIR)/inc`
-
-
-AM_CPPFLAGS += $(COINDEPEND_CFLAGS) $(COINUTILS_CFLAGS) $(OSI_CFLAGS) $(CLP_CFLAGS)  $(CGL_CFLAGS) $(CBC_CFLAGS) $(SYMPHONY_CFLAGS)
-
-
-
-
-if COIN_HAS_ASL
-#  AM_CPPFLAGS += -I`$(CYGPATH_W) $(OSSRCDIR)/src/ThirdPartyASL` 
-#  AM_CPPFLAGS += $(ASL_CPPFLAGS) 
-AM_CPPFLAGS += $(ASL_CFLAGS)
-endif
+	-I`$(CYGPATH_W) $(srcdir)/../OSCommonInterfaces` \
+	-I`$(CYGPATH_W) $(srcdir)/../OSUtils` \
+	-I`$(CYGPATH_W) $(srcdir)/../OSParsers` \
+	$(OSLIB_CFLAGS)
 
 #if COIN_HAS_GAMSUTILS
 #  AM_CPPFLAGS += -I`$(CYGPATH_W) $(GAMSUTILSOBJDIR)/inc`
@@ -69,29 +56,16 @@ endif
 #  AM_CPPFLAGS += -I`$(CYGPATH_W) $(GAMSUTILSSRCDIR)/src/GamsUtils`
 #endif
 
-if COIN_HAS_CPPAD
-  AM_CPPFLAGS += -I`$(CYGPATH_W) $(CPPADSRCDIR)` 
-  AM_CPPFLAGS += $(CPPAD_CPPFLAGS) 
-endif
-
-
-# This line is necessary to allow VPATH compilation with MS compilers
-# on Cygwin
-DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I$(top_builddir)/inc
+# This line is necessary to allow VPATH compilation
+DEFAULT_INCLUDES = -I. -I`$(CYGPATH_W) $(srcdir)` -I..
 
 ########################################################################
 #                Headers that need to be installed                     #
 ########################################################################
 
 # Here list all the header files that are required by a user of the library,
-# and that therefore should be installed in 'install/coin'
+# and that therefore should be installed in 'include/coin'
 includecoindir = $(includedir)/coin
 includecoin_HEADERS = \
-	../../inc/config_os.h \
 	 OSmps2osil.h \
 	 OSnl2osil.h
-
-
-
-
-
