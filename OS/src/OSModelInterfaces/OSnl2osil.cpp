@@ -409,11 +409,18 @@ OSnLNode* OSnl2osil::walkTree (expr *e)
     }
 }//walkTree
 
+static inline char integerOrBinary(real upper, real lower)
+{
+    if (lower > -1.0 + OS_EPS && upper < 2.0 - OS_EPS)
+        return 'B';
+    return 'I';
+}
 
 bool OSnl2osil::createOSInstance()
 {
     osinstance = new OSInstance();
     int i, j;
+
     // put in instanceHeader information
     //
     osinstance->setInstanceDescription("Generated from AMPL nl file");
@@ -458,7 +465,7 @@ bool OSnl2osil::createOSInstance()
 #endif
     for(i = lower; i < upper; i++)  //integer in an objective and in a constraint
     {
-        vartype = 'I';
+        vartype = integerOrBinary(LUv[2*i], LUv[2*i+1]); // AMPL doesn't make the distinction for nonlinear variables
         osinstance->addVariable(i, var_name(i),
                                 LUv[2*i]   > -OSDBL_MAX ? LUv[2*i]   : -OSDBL_MAX,
                                 LUv[2*i+1] <  OSDBL_MAX ? LUv[2*i+1] :  OSDBL_MAX,
@@ -491,7 +498,7 @@ bool OSnl2osil::createOSInstance()
 #endif
     for(i = lower; i < upper; i++)  //integer just in constraints
     {
-        vartype = 'I';
+        vartype =  integerOrBinary(LUv[2*i], LUv[2*i+1]); // AMPL doesn't make the distinction for nonlinear variables
         osinstance->addVariable(i, var_name(i),
                                 LUv[2*i]   > -OSDBL_MAX ? LUv[2*i]   : -OSDBL_MAX,
                                 LUv[2*i+1] <  OSDBL_MAX ? LUv[2*i+1] :  OSDBL_MAX,
@@ -523,7 +530,7 @@ bool OSnl2osil::createOSInstance()
 #endif
     for(i = lower; i < upper; i++)  //integer just in objectives
     {
-        vartype = 'I';
+        vartype = integerOrBinary(LUv[2*i], LUv[2*i+1]); // AMPL doesn't make the distinction for nonlinear variables
         osinstance->addVariable(i, var_name(i),
                                 LUv[2*i]   > -OSDBL_MAX ? LUv[2*i]   : -OSDBL_MAX,
                                 LUv[2*i+1] <  OSDBL_MAX ? LUv[2*i+1] :  OSDBL_MAX,
