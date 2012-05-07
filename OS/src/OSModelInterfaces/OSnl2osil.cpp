@@ -64,14 +64,15 @@ using std::endl;
 //#define AMPLDEBUG
 
 OSnl2osil::OSnl2osil(std::string nlfilename)
+    : osinstance(0), stub(nlfilename)
 {
     efunc *r_ops_int[N_OPS];
     //Initialize the AMPL library
     asl = ASL_alloc( ASL_read_fg);
-    stub = &nlfilename[ 0];
     //cout << "READING FILE " << stub << endl;
     //Initialize the nl file reading
-    nl = jac0dim(stub, (fint)strlen(stub));
+    nl = jac0dim(const_cast<char*>(stub.c_str()), (fint)stub.length());
+
     //Prepare *columnwise* parsing of nl file
     A_vals = (real *)Malloc(nzc*sizeof(real));
     //read nl file as a linear program

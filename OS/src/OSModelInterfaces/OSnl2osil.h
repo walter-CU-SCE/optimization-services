@@ -91,10 +91,6 @@ private:
 
     /** stub is the name of the file with the nl instance
      */
-    char *stub;
-
-
-
-
+    std::string stub;
 };
 #endif
