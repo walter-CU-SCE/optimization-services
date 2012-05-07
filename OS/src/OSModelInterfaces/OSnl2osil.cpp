@@ -49,8 +49,6 @@
 #define VAR_E  ((ASL_fg*)asl)->I.var_e_
 #define CON_DE ((ASL_fg*)asl)->I.con_de_
 
-efunc *r_ops_int[N_OPS];
-
 #include <asl.h>
 
 using std::cerr;
@@ -67,6 +65,7 @@ using std::endl;
 
 OSnl2osil::OSnl2osil(std::string nlfilename)
 {
+    efunc *r_ops_int[N_OPS];
     //Initialize the AMPL library
     asl = ASL_alloc( ASL_read_fg);
     stub = &nlfilename[ 0];
@@ -94,7 +93,6 @@ OSnl2osil::OSnl2osil(std::string nlfilename)
         for(int i = 0; i < N_OPS; i++)
         {
             r_ops_int[i] = (efunc*)(unsigned long)i;
-
         }
         R_OPS = r_ops_int;
         want_derivs = 0;
