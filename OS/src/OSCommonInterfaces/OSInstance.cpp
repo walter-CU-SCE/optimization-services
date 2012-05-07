@@ -2368,13 +2368,15 @@ std::map<int, OSExpressionTree*> OSInstance::getAllNonlinearExpressionTrees()
     // count the number of constraints and objective functions with nonlinear terms.
     for(pos = foundIdx.begin(); pos != foundIdx.end(); ++pos)
     {
-        if(pos->first == -1)
+        if(pos->first < 0)
         {
             m_iObjectiveNumberNonlinear++;
         }
-        else m_iConstraintNumberNonlinear++;
+        else
+        {
+            m_iConstraintNumberNonlinear++;
+        }
     }
-    foundIdx.clear();
     m_bProcessExpressionTrees = true;
     return m_mapExpressionTrees;
 }// getAllNonlinearExpressionTrees
