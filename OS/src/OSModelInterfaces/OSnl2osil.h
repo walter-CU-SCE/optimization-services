@@ -81,13 +81,12 @@ private:
      */
     ograd *og;
 
-    /** asl is a pointer to basic AMPL data structure
+    /** Pointers to AMPL data structures.
+	 * cw is loaded in column-wise format.
+	 * rw is loaded in row-wise format.
+	 * asl is for conveniently switching.
      */
-    ASL *asl;
-
-    /** nl is a pointer to the file with the nl instance
-     */
-    FILE *nl;
+    ASL *asl, *cw, *rw;
 
     /** stub is the name of the file with the nl instance
      */
