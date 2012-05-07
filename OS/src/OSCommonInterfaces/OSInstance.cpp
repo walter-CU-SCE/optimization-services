@@ -3487,15 +3487,15 @@ std::string OSInstance::printModel( )
     outStr << "Objectives:" << std::endl;
     for(i = 0; i < numObj; i++)
     {
-        if( this->getObjectiveMaxOrMins()[0] == "min")
+        if (getObjectiveMaxOrMins()) // should not be null with nonzero numObj
         {
-            outStr << "min ";
+            outStr << getObjectiveMaxOrMins()[i] << ' ';
         }
         else
         {
             outStr << "max ";
         }
-        outStr << this->printModel( i - numObj);
+        outStr << this->printModel(-i-1);
     }
     outStr << std::endl;
     outStr << "Constraints:" << std::endl;
