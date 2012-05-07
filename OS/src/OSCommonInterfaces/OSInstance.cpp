@@ -3002,6 +3002,7 @@ bool OSInstance::setLinearConstraintCoefficients(int numberOfValues, bool isColu
     instanceData->linearConstraintCoefficients->start->el = (starts+startsBegin);
 
     instanceData->linearConstraintCoefficients->start->numberOfEl = startsEnd - startsBegin + 1;
+    instanceData->linearConstraintCoefficients->iNumberOfStartElements = startsEnd - startsBegin + 1;
 
     //values
     if (instanceData->linearConstraintCoefficients->value == NULL) 
